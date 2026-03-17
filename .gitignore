@@ -1,0 +1,8 @@
+# Ignore Python virtual environment
+.venv/
+
+# Optional: ignore pycache
+__pycache__/
+*.py[cod]
+
+# Keep database (db.sqlite3) tracked by git, do not ignore it
