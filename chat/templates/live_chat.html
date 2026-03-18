@@ -1,0 +1,344 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<style>
+/* Modern Chat UI - Improved version */
+.chat-container {
+    max-width: 900px;
+    margin: 20px auto;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+}
+
+.chat-header {
+    background: #417690;
+    color: white;
+    padding: 20px 24px;
+}
+
+.chat-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+}
+
+.chat-toolbar {
+    display: flex;
+    gap: 12px;
+    padding: 16px 24px;
+    background: #f9fafc;
+    border-bottom: 1px solid #e9edf2;
+}
+
+.user-select {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 30px;
+    border: 1px solid #dde1e6;
+    background: white;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.user-select:focus {
+    outline: none;
+    border-color: #417690;
+    box-shadow: 0 0 0 3px rgba(65,118,144,0.15);
+}
+
+.btn {
+    padding: 12px 28px;
+    background: #417690;
+    color: white;
+    border: none;
+    border-radius: 30px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    white-space: nowrap;
+}
+
+.btn:hover {
+    background: #2c5a6e;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(65,118,144,0.25);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    background: #a0b8c4;
+}
+
+.chat-log {
+    height: 500px;
+    overflow-y: auto;
+    background: #f0f4f8;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Message wrapper - alignment */
+.msg-wrapper.me {
+    align-self: flex-end;
+    text-align: right;
+    max-width: 80%;
+}
+
+.msg-wrapper.them {
+    align-self: flex-start;
+    text-align: left;
+    max-width: 80%;
+}
+
+/* Message bubbles */
+.msg-bubble {
+    display: inline-block;
+    padding: 12px 18px;
+    margin: 4px 0;
+    border-radius: 20px;
+    line-height: 1.5;
+    word-wrap: break-word;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    position: relative;
+}
+
+/* Admin message (me) */
+.me .msg-bubble {
+    background: #417690;
+    color: white;
+    border-bottom-right-radius: 4px;
+    text-align: left;
+}
+
+/* User message (them) */
+.them .msg-bubble {
+    background: #ffffff;
+    color: #1e293b;
+    border: 1px solid #e2e8f0;
+    border-bottom-left-radius: 4px;
+}
+
+/* Optional: add sender name or time (if needed in future) */
+.msg-sender, .msg-time {
+    font-size: 0.7rem;
+    margin: 2px 8px;
+    color: #5f6b7a;
+}
+
+.me .msg-time {
+    text-align: right;
+}
+
+.chat-input-area {
+    display: flex;
+    padding: 18px 24px;
+    gap: 12px;
+    border-top: 1px solid #e9edf2;
+    background: white;
+}
+
+.chat-input {
+    flex: 1;
+    padding: 12px 18px;
+    border-radius: 30px;
+    border: 1px solid #dde1e6;
+    background: #f9fafc;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.chat-input:focus {
+    outline: none;
+    border-color: #417690;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(65,118,144,0.1);
+}
+
+.chat-input:disabled {
+    background: #eef2f6;
+    cursor: not-allowed;
+    border-color: #d0d7de;
+}
+
+/* Scrollbar styling */
+.chat-log::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chat-log::-webkit-scrollbar-track {
+    background: #e2e8f0;
+    border-radius: 10px;
+}
+
+.chat-log::-webkit-scrollbar-thumb {
+    background: #a0b8c4;
+    border-radius: 10px;
+}
+
+.chat-log::-webkit-scrollbar-thumb:hover {
+    background: #7a9eb0;
+}
+
+/* Empty state styling */
+.chat-log > div:first-child {
+    text-align: center;
+    color: #6c757d;
+    padding: 40px 20px;
+    font-style: italic;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .chat-toolbar {
+        flex-wrap: wrap;
+    }
+    .user-select, .btn {
+        width: 100%;
+    }
+    .msg-wrapper.me, .msg-wrapper.them {
+        max-width: 90%;
+    }
+    .chat-input-area {
+        flex-wrap: wrap;
+    }
+    .chat-input, .btn {
+        width: 100%;
+    }
+}
+</style>
+
+<div class="chat-container">
+    <div class="chat-header">
+        <h2>Live Support Dashboard</h2>
+    </div>
+
+    <div class="chat-toolbar">
+        <select id="user-select" class="user-select">
+            <option value="">-- Select User --</option>
+            {% for user in real_users %}
+                <option value="{{ user }}">{{ user }}</option>
+            {% endfor %}
+        </select>
+        <button id="join-room-btn" class="btn">Start Chat</button>
+    </div>
+
+    <div id="chat-log" class="chat-log">
+        <div>Select a user to start chat</div>
+    </div>
+
+    <div class="chat-input-area">
+        <input id="chat-message-input" class="chat-input" disabled>
+        <button id="chat-message-submit" class="btn" disabled>Send</button>
+    </div>
+</div>
+
+<script>
+let chatSocket = null;
+const adminUsername = "{{ request.user.username }}";
+
+document.getElementById('join-room-btn').onclick = function () {
+
+    const targetUser = document.getElementById('user-select').value;
+    if (!targetUser) {
+        alert("Select user");
+        return;
+    }
+
+    const roomName = "support_" + targetUser;
+    const chatLog = document.getElementById('chat-log');
+
+    // ✅ 1. LOAD HISTORY
+    fetch(`/api/messages/${roomName}/`)
+        .then(res => res.json())
+        .then(data => {
+            chatLog.innerHTML = "";
+
+            if (data.length === 0) {
+                chatLog.innerHTML = "<div>No messages</div>";
+            }
+
+            data.forEach(msg => {
+                const isMe = msg.sender === adminUsername;
+                const cls = isMe ? "me" : "them";
+
+                chatLog.innerHTML += `
+                    <div class="msg-wrapper ${cls}">
+                        <div class="msg-bubble">${msg.content}</div>
+                    </div>
+                `;
+            });
+
+            chatLog.scrollTop = chatLog.scrollHeight;
+        });
+
+    // ✅ 2. CONNECT SOCKET
+    if (chatSocket) chatSocket.close();
+
+    const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+
+    chatSocket = new WebSocket(
+        protocol + window.location.host + "/ws/chat/" + roomName + "/"
+    );
+
+    chatSocket.onmessage = function (e) {
+        const data = JSON.parse(e.data);
+        const isMe = data.sender === adminUsername;
+        const cls = isMe ? "me" : "them";
+
+        chatLog.innerHTML += `
+            <div class="msg-wrapper ${cls}">
+                <div class="msg-bubble">${data.message}</div>
+            </div>
+        `;
+
+        chatLog.scrollTop = chatLog.scrollHeight;
+    };
+
+    chatSocket.onclose = function () {
+        console.log("Disconnected");
+    };
+
+    // ✅ ENABLE INPUT
+    document.getElementById('chat-message-input').disabled = false;
+    document.getElementById('chat-message-submit').disabled = false;
+};
+
+// ✅ SEND MESSAGE
+document.getElementById('chat-message-submit').onclick = function () {
+    const input = document.getElementById('chat-message-input');
+    const message = input.value.trim();
+
+    if (message && chatSocket) {
+        chatSocket.send(JSON.stringify({
+            message: message,
+            sender: adminUsername
+        }));
+        input.value = "";
+    }
+};
+
+// ✅ ENTER KEY
+document.getElementById('chat-message-input').onkeyup = function (e) {
+    if (e.key === "Enter") {
+        document.getElementById('chat-message-submit').click();
+    }
+};
+</script>
+
+{% endblock %}
