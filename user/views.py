@@ -1,25 +1,47 @@
-from rest_framework.views import APIView
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
-from rest_framework import status
-
+from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import LoginSerializer
+from rest_framework_simplejwt.views import TokenRefreshView
+
+from .serializers import AuthUserSerializer, LoginSerializer, RegisterSerializer
+
+
+def build_auth_response(user):
+    refresh = RefreshToken.for_user(user)
+    return {
+        "access": str(refresh.access_token),
+        "refresh": str(refresh),
+        "user": AuthUserSerializer(user).data,
+    }
+
+
+class RegisterView(generics.CreateAPIView):
+    serializer_class = RegisterSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(build_auth_response(user), status=status.HTTP_201_CREATED)
 
 
 class LoginView(APIView):
+    permission_classes = [permissions.AllowAny]
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(build_auth_response(serializer.validated_data), status=status.HTTP_200_OK)
 
-        if serializer.is_valid():
-            user = serializer.validated_data
 
-            refresh = RefreshToken.for_user(user)
+class MeView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
-            return Response({
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
-                "username": user.username
-            })
+    def get(self, request):
+        return Response(AuthUserSerializer(request.user).data, status=status.HTTP_200_OK)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class RefreshView(TokenRefreshView):
+    permission_classes = [permissions.AllowAny]
