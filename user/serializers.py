@@ -45,6 +45,19 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 
+class UpdateProfileSerializer(serializers.ModelSerializer):
+    role = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = ["username", "first_name", "last_name", "email", "role"]
+        read_only_fields = ["username", "role"]
+
+    def get_role(self, obj):
+        profile = getattr(obj, "userprofile", None)
+        return profile.role if profile else UserProfile.EMPLOYEE
+
+
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(write_only=True)

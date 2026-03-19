@@ -2,343 +2,350 @@
 
 {% block content %}
 <style>
-/* Modern Chat UI - Improved version */
-.chat-container {
-    max-width: 900px;
-    margin: 20px auto;
-    background: #ffffff;
-    border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    display: flex;
-    flex-direction: column;
+.chat-shell {
+    display: grid;
+    grid-template-columns: 320px minmax(0, 1fr);
+    gap: 24px;
+    margin-top: 20px;
+}
+
+.chat-card {
+    background: #fff;
+    border: 1px solid #d9e3ec;
+    border-radius: 18px;
+    box-shadow: 0 12px 30px rgba(17, 24, 39, 0.07);
     overflow: hidden;
-    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
 }
 
-.chat-header {
-    background: #417690;
-    color: white;
-    padding: 20px 24px;
+.chat-card-header {
+    padding: 20px 22px;
+    border-bottom: 1px solid #e5edf4;
+    background: linear-gradient(180deg, #f9fbfd 0%, #ffffff 100%);
 }
 
-.chat-header h2 {
+.chat-card-header h2,
+.chat-card-header h3,
+.chat-card-header p {
     margin: 0;
-    font-size: 1.5rem;
-    font-weight: 500;
-    letter-spacing: -0.01em;
 }
 
-.chat-toolbar {
-    display: flex;
-    gap: 12px;
-    padding: 16px 24px;
-    background: #f9fafc;
-    border-bottom: 1px solid #e9edf2;
+.chat-card-header p {
+    color: #61758a;
+    margin-top: 8px;
 }
 
-.user-select {
-    flex: 1;
-    padding: 12px 16px;
-    border-radius: 30px;
-    border: 1px solid #dde1e6;
-    background: white;
-    font-size: 0.95rem;
-    transition: all 0.2s ease;
-    cursor: pointer;
+.chat-sidebar-section {
+    padding: 18px 22px;
+    border-bottom: 1px solid #eef3f7;
 }
 
-.user-select:focus {
+.chat-sidebar-section:last-child {
+    border-bottom: none;
+}
+
+.chat-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6b7f93;
+    margin-bottom: 10px;
+}
+
+.chat-select {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid #c8d6e3;
+    background: #fff;
+}
+
+.chat-select:focus,
+.chat-textarea:focus {
     outline: none;
     border-color: #417690;
-    box-shadow: 0 0 0 3px rgba(65,118,144,0.15);
+    box-shadow: 0 0 0 3px rgba(65, 118, 144, 0.14);
 }
 
-.btn {
-    padding: 12px 28px;
-    background: #417690;
-    color: white;
-    border: none;
-    border-radius: 30px;
-    font-size: 0.95rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    white-space: nowrap;
-}
-
-.btn:hover {
-    background: #2c5a6e;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 14px rgba(65,118,144,0.25);
-}
-
-.btn:active {
-    transform: translateY(0);
-}
-
-.btn:disabled {
-    opacity: 0.5;
-    pointer-events: none;
-    background: #a0b8c4;
-}
-
-.chat-log {
-    height: 500px;
-    overflow-y: auto;
-    background: #f0f4f8;
-    padding: 24px;
+.chat-actions {
+    margin-top: 12px;
     display: flex;
-    flex-direction: column;
-    gap: 12px;
+    gap: 10px;
 }
 
-/* Message wrapper - alignment */
+.button-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 16px;
+    border-radius: 999px;
+    border: none;
+    background: #417690;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.button-primary:hover {
+    background: #2f5c72;
+    color: #fff;
+}
+
+.conversation-list {
+    display: grid;
+    gap: 10px;
+}
+
+.conversation-link {
+    display: block;
+    padding: 14px;
+    border-radius: 14px;
+    border: 1px solid #e3ebf3;
+    background: #f8fbfd;
+    text-decoration: none;
+    color: #243447;
+}
+
+.conversation-link:hover,
+.conversation-link.is-selected {
+    border-color: #417690;
+    background: #eef5f8;
+}
+
+.conversation-link strong {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.conversation-link span {
+    display: block;
+    color: #61758a;
+    font-size: 13px;
+}
+
+.chat-thread {
+    padding: 24px;
+    background: linear-gradient(180deg, #f4f8fb 0%, #edf4f8 100%);
+    min-height: 460px;
+    max-height: 560px;
+    overflow-y: auto;
+}
+
+.chat-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 320px;
+    color: #61758a;
+    text-align: center;
+}
+
+.msg-wrapper {
+    display: flex;
+    margin-bottom: 16px;
+}
+
 .msg-wrapper.me {
-    align-self: flex-end;
-    text-align: right;
-    max-width: 80%;
+    justify-content: flex-end;
 }
 
 .msg-wrapper.them {
-    align-self: flex-start;
-    text-align: left;
-    max-width: 80%;
+    justify-content: flex-start;
 }
 
-/* Message bubbles */
 .msg-bubble {
-    display: inline-block;
-    padding: 12px 18px;
-    margin: 4px 0;
-    border-radius: 20px;
-    line-height: 1.5;
-    word-wrap: break-word;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    position: relative;
+    max-width: 75%;
+    padding: 14px 16px;
+    border-radius: 18px;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
 }
 
-/* Admin message (me) */
-.me .msg-bubble {
+.msg-wrapper.me .msg-bubble {
     background: #417690;
-    color: white;
-    border-bottom-right-radius: 4px;
-    text-align: left;
+    color: #fff;
+    border-bottom-right-radius: 6px;
 }
 
-/* User message (them) */
-.them .msg-bubble {
-    background: #ffffff;
-    color: #1e293b;
-    border: 1px solid #e2e8f0;
-    border-bottom-left-radius: 4px;
+.msg-wrapper.them .msg-bubble {
+    background: #fff;
+    color: #243447;
+    border: 1px solid #dbe6ef;
+    border-bottom-left-radius: 6px;
 }
 
-/* Optional: add sender name or time (if needed in future) */
-.msg-sender, .msg-time {
-    font-size: 0.7rem;
-    margin: 2px 8px;
-    color: #5f6b7a;
+.msg-meta {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 12px;
+    opacity: 0.78;
 }
 
-.me .msg-time {
-    text-align: right;
+.chat-composer {
+    padding: 20px 24px 24px;
+    border-top: 1px solid #e5edf4;
 }
 
-.chat-input-area {
-    display: flex;
-    padding: 18px 24px;
-    gap: 12px;
-    border-top: 1px solid #e9edf2;
-    background: white;
+.chat-textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    border: 1px solid #c8d6e3;
+    resize: vertical;
 }
 
-.chat-input {
-    flex: 1;
-    padding: 12px 18px;
-    border-radius: 30px;
-    border: 1px solid #dde1e6;
-    background: #f9fafc;
-    font-size: 0.95rem;
-    transition: all 0.2s ease;
+.chat-hint {
+    color: #61758a;
+    font-size: 13px;
+    margin-top: 10px;
 }
 
-.chat-input:focus {
-    outline: none;
-    border-color: #417690;
-    background: white;
-    box-shadow: 0 0 0 3px rgba(65,118,144,0.1);
-}
-
-.chat-input:disabled {
-    background: #eef2f6;
-    cursor: not-allowed;
-    border-color: #d0d7de;
-}
-
-/* Scrollbar styling */
-.chat-log::-webkit-scrollbar {
-    width: 8px;
-}
-
-.chat-log::-webkit-scrollbar-track {
-    background: #e2e8f0;
-    border-radius: 10px;
-}
-
-.chat-log::-webkit-scrollbar-thumb {
-    background: #a0b8c4;
-    border-radius: 10px;
-}
-
-.chat-log::-webkit-scrollbar-thumb:hover {
-    background: #7a9eb0;
-}
-
-/* Empty state styling */
-.chat-log > div:first-child {
-    text-align: center;
-    color: #6c757d;
-    padding: 40px 20px;
-    font-style: italic;
-}
-
-/* Responsive adjustments */
-@media (max-width: 600px) {
-    .chat-toolbar {
-        flex-wrap: wrap;
+@media (max-width: 960px) {
+    .chat-shell {
+        grid-template-columns: 1fr;
     }
-    .user-select, .btn {
-        width: 100%;
-    }
-    .msg-wrapper.me, .msg-wrapper.them {
+
+    .msg-bubble {
         max-width: 90%;
-    }
-    .chat-input-area {
-        flex-wrap: wrap;
-    }
-    .chat-input, .btn {
-        width: 100%;
     }
 }
 </style>
 
-<div class="chat-container">
-    <div class="chat-header">
-        <h2>Live Support Dashboard</h2>
-    </div>
+<div class="chat-shell">
+    <section class="chat-card">
+        <div class="chat-card-header">
+            <h2>Employee Chat</h2>
+            <p>Start or continue a direct conversation with any employee.</p>
+        </div>
 
-    <div class="chat-toolbar">
-        <select id="user-select" class="user-select">
-            <option value="">-- Select User --</option>
-            {% for user in real_users %}
-                <option value="{{ user }}">{{ user }}</option>
-            {% endfor %}
-        </select>
-        <button id="join-room-btn" class="btn">Start Chat</button>
-    </div>
+        <div class="chat-sidebar-section">
+            <form method="get">
+                <label for="employee" class="chat-label">Choose employee</label>
+                <select id="employee" name="employee" class="chat-select">
+                    <option value="">Select an employee</option>
+                    {% for employee in employees %}
+                        <option value="{{ employee.id }}" {% if selected_employee and selected_employee.id == employee.id %}selected{% endif %}>
+                            {{ employee.username }}{% if employee.first_name or employee.last_name %} - {{ employee.first_name }} {{ employee.last_name }}{% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+                <div class="chat-actions">
+                    <button type="submit" class="button-primary">Open Chat</button>
+                </div>
+            </form>
+        </div>
 
-    <div id="chat-log" class="chat-log">
-        <div>Select a user to start chat</div>
-    </div>
+        <div class="chat-sidebar-section">
+            <span class="chat-label">Recent conversations</span>
+            <div class="conversation-list">
+                {% for conversation in conversation_cards %}
+                    <a href="?employee={{ conversation.employee.id }}" class="conversation-link{% if conversation.is_selected %} is-selected{% endif %}">
+                        <strong>{{ conversation.employee.username }}</strong>
+                        <span>
+                            {% if conversation.last_message %}
+                                {{ conversation.last_message.content|truncatechars:55 }}
+                            {% else %}
+                                No messages yet
+                            {% endif %}
+                        </span>
+                    </a>
+                {% empty %}
+                    <span class="chat-hint">No employee conversations yet.</span>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
 
-    <div class="chat-input-area">
-        <input id="chat-message-input" class="chat-input" disabled>
-        <button id="chat-message-submit" class="btn" disabled>Send</button>
-    </div>
+    <section class="chat-card">
+        <div class="chat-card-header">
+            <h3>
+                {% if selected_employee %}
+                    Conversation with {{ selected_employee.username }}
+                {% else %}
+                    Select an employee to begin
+                {% endif %}
+            </h3>
+            <p>
+                {% if selected_employee %}
+                    Messages here are sent from your current admin account.
+                {% else %}
+                    Choose an employee from the left to open their conversation.
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="chat-thread">
+            {% if selected_employee %}
+                {% for message in chat_messages %}
+                    <div class="msg-wrapper {% if message.sender_id == request.user.id %}me{% else %}them{% endif %}">
+                        <div class="msg-bubble">
+                            <span class="msg-meta">{{ message.sender.username }} • {{ message.timestamp|date:"M j, Y, g:i a" }}</span>
+                            <div>{{ message.content|linebreaksbr }}</div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="chat-empty">No messages yet. Send the first message to start the conversation.</div>
+                {% endfor %}
+            {% else %}
+                <div class="chat-empty">Pick an employee to view messages and send a reply.</div>
+            {% endif %}
+        </div>
+
+        {% if selected_employee %}
+            <div class="chat-composer">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="employee" value="{{ selected_employee.id }}">
+                    <input type="hidden" name="form_token" value="{{ form_token }}">
+                    <label for="message" class="chat-label">New message</label>
+                    <textarea id="message" name="message" class="chat-textarea" placeholder="Write a helpful message to {{ selected_employee.username }}..."></textarea>
+                    <div class="chat-actions">
+                        <button type="submit" class="button-primary">Send Message</button>
+                    </div>
+                    <div class="chat-hint">This admin view is optimized for direct admin-to-employee support conversations.</div>
+                </form>
+            </div>
+        {% endif %}
+    </section>
 </div>
 
+{% if selected_employee %}
 <script>
-let chatSocket = null;
-const adminUsername = "{{ request.user.username }}";
-
-document.getElementById('join-room-btn').onclick = function () {
-
-    const targetUser = document.getElementById('user-select').value;
-    if (!targetUser) {
-        alert("Select user");
+(function () {
+    const employeeId = "{{ selected_employee_id }}";
+    if (!employeeId) {
         return;
     }
 
-    const roomName = "support_" + targetUser;
-    const chatLog = document.getElementById('chat-log');
+    let refreshPausedUntil = 0;
+    const messageInput = document.getElementById("message");
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set("employee", employeeId);
 
-    // ✅ 1. LOAD HISTORY
-    fetch(`/api/messages/${roomName}/`)
-        .then(res => res.json())
-        .then(data => {
-            chatLog.innerHTML = "";
+    function refreshConversation() {
+        if (Date.now() < refreshPausedUntil) {
+            return;
+        }
 
-            if (data.length === 0) {
-                chatLog.innerHTML = "<div>No messages</div>";
-            }
+        const nextUrl = new URL(currentUrl.toString());
+        nextUrl.searchParams.set("_chat_refresh", Date.now().toString());
+        window.location.replace(nextUrl.toString());
+    }
 
-            data.forEach(msg => {
-                const isMe = msg.sender === adminUsername;
-                const cls = isMe ? "me" : "them";
-
-                chatLog.innerHTML += `
-                    <div class="msg-wrapper ${cls}">
-                        <div class="msg-bubble">${msg.content}</div>
-                    </div>
-                `;
-            });
-
-            chatLog.scrollTop = chatLog.scrollHeight;
+    if (messageInput) {
+        messageInput.addEventListener("focus", function () {
+            refreshPausedUntil = Number.MAX_SAFE_INTEGER;
         });
 
-    // ✅ 2. CONNECT SOCKET
-    if (chatSocket) chatSocket.close();
-
-    const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
-
-    chatSocket = new WebSocket(
-        protocol + window.location.host + "/ws/chat/" + roomName + "/"
-    );
-
-    chatSocket.onmessage = function (e) {
-        const data = JSON.parse(e.data);
-        const isMe = data.sender === adminUsername;
-        const cls = isMe ? "me" : "them";
-
-        chatLog.innerHTML += `
-            <div class="msg-wrapper ${cls}">
-                <div class="msg-bubble">${data.message}</div>
-            </div>
-        `;
-
-        chatLog.scrollTop = chatLog.scrollHeight;
-    };
-
-    chatSocket.onclose = function () {
-        console.log("Disconnected");
-    };
-
-    // ✅ ENABLE INPUT
-    document.getElementById('chat-message-input').disabled = false;
-    document.getElementById('chat-message-submit').disabled = false;
-};
-
-// ✅ SEND MESSAGE
-document.getElementById('chat-message-submit').onclick = function () {
-    const input = document.getElementById('chat-message-input');
-    const message = input.value.trim();
-
-    if (message && chatSocket) {
-        chatSocket.send(JSON.stringify({
-            message: message,
-            sender: adminUsername
-        }));
-        input.value = "";
+        messageInput.addEventListener("blur", function () {
+            refreshPausedUntil = Date.now() + 15000;
+        });
     }
-};
 
-// ✅ ENTER KEY
-document.getElementById('chat-message-input').onkeyup = function (e) {
-    if (e.key === "Enter") {
-        document.getElementById('chat-message-submit').click();
-    }
-};
+    setInterval(refreshConversation, 10000);
+})();
 </script>
-
+{% endif %}
 {% endblock %}
