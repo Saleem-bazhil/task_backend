@@ -119,13 +119,13 @@ CORS_ALLOWED_ORIGINS = [
 
 JAZZMIN_SETTINGS = {
     # Title of the window
-    "site_title": "Atrack Admin",
+    "site_title": "Renderways",
 
     # Title on the login screen
-    "site_header": "Atrack",
+    "site_header": "Renderways",
 
     # Title on the brand
-    "site_brand": "Atrack",
+    "site_brand": "Renderways",
 
     # Logo to use for your site (Changed to None so it doesn't break looking for a missing image)
     "site_logo": None,
@@ -136,10 +136,10 @@ JAZZMIN_SETTINGS = {
     "site_icon": None,
 
     # Welcome text on the login screen
-    "welcome_sign": "Welcome to the Atrack Admin",
+    "welcome_sign": "Welcome to Renderways",
 
     # Copyright on the footer
-    "copyright": "Atrack Workspace",
+    "copyright": "Renderways Workspace",
 
     "search_model": ["auth.User", "auth.Group"],
     "user_avatar": None,
@@ -147,12 +147,7 @@ JAZZMIN_SETTINGS = {
     ############
     # Top Menu #
     ############
-    "topmenu_links": [
-        {"name": "Home",  "url": "admin:index", "permissions": ["auth.view_user"]},
-        {"model": "auth.User"},
-        # Changed from "books" to your "task" app
-        {"app": "task"},
-    ],
+    "topmenu_links": [],
 
     #############
     # User Menu #
