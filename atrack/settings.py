@@ -10,6 +10,7 @@ ALLOWED_HOSTS = [host for host in os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,l
 
 INSTALLED_APPS = [
     "corsheaders",
+    'jazzmin',
     "channels",
     "daphne",
     "rest_framework",
@@ -115,3 +116,90 @@ CORS_ALLOWED_ORIGINS = [
     ).split(",")
     if origin
 ]
+
+JAZZMIN_SETTINGS = {
+    # Title of the window
+    "site_title": "Atrack Admin",
+
+    # Title on the login screen
+    "site_header": "Atrack",
+
+    # Title on the brand
+    "site_brand": "Atrack",
+
+    # Logo to use for your site (Changed to None so it doesn't break looking for a missing image)
+    "site_logo": None,
+
+    "login_logo": None,
+    "login_logo_dark": None,
+    "site_logo_classes": "img-circle",
+    "site_icon": None,
+
+    # Welcome text on the login screen
+    "welcome_sign": "Welcome to the Atrack Admin",
+
+    # Copyright on the footer
+    "copyright": "Atrack Workspace",
+
+    "search_model": ["auth.User", "auth.Group"],
+    "user_avatar": None,
+
+    ############
+    # Top Menu #
+    ############
+    "topmenu_links": [
+        {"name": "Home",  "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"model": "auth.User"},
+        # Changed from "books" to your "task" app
+        {"app": "task"},
+    ],
+
+    #############
+    # User Menu #
+    #############
+    "usermenu_links": [
+        {"model": "auth.user"}
+    ],
+
+    #############
+    # Side Menu #
+    #############
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "hide_apps": [],
+    "hide_models": [],
+
+    # Reordered based on the apps actually installed in your Django project
+    "order_with_respect_to": ["auth", "user", "task", "chat"],
+
+    # Cleared the custom books links so Django doesn't throw a URL resolution error
+    "custom_links": {},
+
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        # Custom icons for your actual apps
+        "user.User": "fas fa-user-circle",       
+        "task.Task": "fas fa-tasks",             
+        "chat.Message": "fas fa-comments",       
+        "chat.Room": "fas fa-layer-group",
+    },
+
+    "default_icon_parents": "fas fa-chevron-circle-right",
+    "default_icon_children": "fas fa-circle",
+    "related_modal_active": False,
+    "custom_css": None,
+    "custom_js": None,
+    "use_google_fonts_cdn": True,
+    "show_ui_builder": False,
+
+    ###############
+    # Change view #
+    ###############
+    "changeform_format": "horizontal_tabs",
+    "changeform_format_overrides": {"auth.user": "collapsible", "auth.group": "vertical_tabs"},
+    
+    # Changed to False unless you actually have multiple languages set up
+    "language_chooser": False, 
+}
