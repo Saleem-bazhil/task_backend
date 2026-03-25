@@ -58,10 +58,21 @@ class MessageAdmin(admin.ModelAdmin):
     def preview(self, obj):
         return Truncator(obj.content).chars(60)
 
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_view_permission(self, request, obj=None):
+        # Allow access to the changelist endpoint for redirect to live chat, but deny direct object views.
+        return obj is None
+
     def changelist_view(self, request, extra_context=None):
-        extra_context = extra_context or {}
-        extra_context["live_chat_url"] = reverse("admin:chat_message_live_chat")
-        return super().changelist_view(request, extra_context=extra_context)
+        return HttpResponseRedirect(reverse("admin:chat_message_live_chat"))
 
     def live_chat_view(self, request):
         employees = [

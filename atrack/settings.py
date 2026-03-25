@@ -162,13 +162,21 @@ JAZZMIN_SETTINGS = {
     "show_sidebar": True,
     "navigation_expanded": True,
     "hide_apps": [],
-    "hide_models": [],
+    "hide_models": ["chat.Message", "chat.ChatRoom"],
 
     # Reordered based on the apps actually installed in your Django project
     "order_with_respect_to": ["auth", "user", "task", "chat"],
 
-    # Cleared the custom books links so Django doesn't throw a URL resolution error
-    "custom_links": {},
+    # Add an explicit employee chat link in the chat app menu
+    "custom_links": {
+        "chat": [
+            {
+                "name": "Employee Chat",
+                "url": "admin:chat_message_live_chat",
+                "icon": "fas fa-comments",
+            },
+        ]
+    },
 
     "icons": {
         "auth": "fas fa-users-cog",
