@@ -95,8 +95,8 @@ TIME_ZONE = os.getenv("DJANGO_TIME_ZONE", "UTC")
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "static/"
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -206,3 +206,7 @@ JAZZMIN_SETTINGS = {
     # Changed to False unless you actually have multiple languages set up
     "language_chooser": False, 
 }
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://taskapi.bazhilgroups.in",
+]
