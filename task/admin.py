@@ -1,8 +1,9 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin
 from .models import Task
 
 @admin.register(Task)
-class TaskAdmin(admin.ModelAdmin):
+class TaskAdmin(ModelAdmin):
     # 1. These fields will show up as columns in the admin list view
     list_display = ('title', 'user', 'status', 'priority', 'due_date', 'created_at')
     

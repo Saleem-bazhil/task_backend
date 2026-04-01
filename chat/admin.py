@@ -6,6 +6,7 @@ from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from django.utils.crypto import get_random_string
 from django.utils.text import Truncator
+from unfold.admin import ModelAdmin
 
 from .models import ChatRoom, Message
 from .permissions import can_chat_with, is_admin_user
@@ -15,7 +16,7 @@ User = get_user_model()
 
 
 @admin.register(ChatRoom)
-class ChatRoomAdmin(admin.ModelAdmin):
+class ChatRoomAdmin(ModelAdmin):
     list_display = ("room_id", "participants", "message_count", "updated_at")
     search_fields = ("room_id", "user_one__username", "user_two__username")
     ordering = ("-updated_at",)
@@ -34,7 +35,7 @@ class ChatRoomAdmin(admin.ModelAdmin):
 
 
 @admin.register(Message)
-class MessageAdmin(admin.ModelAdmin):
+class MessageAdmin(ModelAdmin):
     change_list_template = "message_change_list.html"
     selected_employee_session_key = "admin_chat_selected_employee"
     list_display = ("room", "sender", "receiver", "preview", "timestamp")
