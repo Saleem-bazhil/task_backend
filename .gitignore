@@ -1,8 +1,46 @@
-# Ignore Python virtual environment
+# Virtual environments
 .venv/
+venv/
+env/
 
-# Optional: ignore pycache
+# Python cache and compiled files
 __pycache__/
 *.py[cod]
+*$py.class
 
-# Keep database (db.sqlite3) tracked by git, do not ignore it
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Django / Python tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Logs
+*.log
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local app data
+media/
+staticfiles/
+
+# Keep database tracked
+!db.sqlite3
