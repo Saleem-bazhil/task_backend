@@ -20,8 +20,53 @@
     }
 
     .chat-page {
+        position: relative;
         margin-top: 20px;
         color: var(--chat-text);
+    }
+
+    .chat-loading {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(15, 23, 42, 0.28);
+        backdrop-filter: blur(6px);
+    }
+
+    .chat-loading.is-visible {
+        display: flex;
+    }
+
+    .chat-loading-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        min-width: 220px;
+        padding: 22px 24px;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        border-radius: 24px;
+        background: rgba(25, 33, 47, 0.88);
+        color: #fff;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+    }
+
+    .chat-loading-spinner {
+        width: 38px;
+        height: 38px;
+        border: 3px solid rgba(255, 255, 255, 0.22);
+        border-top-color: #fff;
+        border-radius: 999px;
+        animation: chat-spin 0.85s linear infinite;
+    }
+
+    .chat-loading-text {
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
     }
 
     .chat-hero {
@@ -201,6 +246,14 @@
         text-decoration: none;
         box-shadow: 0 10px 24px rgba(31, 111, 95, 0.22);
         transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+
+    .chat-button[disabled] {
+        cursor: wait;
+        opacity: 0.82;
+        transform: none;
+        filter: none;
+        box-shadow: 0 10px 24px rgba(31, 111, 95, 0.16);
     }
 
     .chat-button:hover {
@@ -481,9 +534,22 @@
             width: 100%;
         }
     }
+
+    @keyframes chat-spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
 </style>
 
 <div class="chat-page">
+    <div class="chat-loading" id="chat-loading" aria-hidden="true">
+        <div class="chat-loading-card">
+            <div class="chat-loading-spinner"></div>
+            <div class="chat-loading-text">Loading conversation...</div>
+        </div>
+    </div>
+
     <section class="chat-hero">
         <h1 class="chat-hero-title">Message center</h1>
         <p class="chat-hero-copy">
@@ -501,7 +567,7 @@
             </div>
 
             <div class="chat-sidebar-section">
-                <form method="get">
+                <form method="get" data-chat-loading-form>
                     <label for="employee" class="chat-label">Choose employee</label>
                     <select id="employee" name="employee" class="chat-select">
                         <option value="">Select an employee</option>
@@ -521,7 +587,7 @@
                 <span class="chat-label">Recent conversations</span>
                 <div class="conversation-list">
                     {% for conversation in conversation_cards %}
-                        <a href="?employee={{ conversation.employee.id }}" class="conversation-link{% if conversation.is_selected %} is-selected{% endif %}">
+                        <a href="?employee={{ conversation.employee.id }}" class="conversation-link{% if conversation.is_selected %} is-selected{% endif %}" data-chat-loading-link>
                             <div class="conversation-name">
                                 <strong>{{ conversation.employee.username }}</strong>
                                 {% if conversation.is_selected %}
@@ -596,7 +662,7 @@
 
             {% if selected_employee %}
                 <div class="chat-composer">
-                    <form method="post">
+                    <form method="post" data-chat-loading-form>
                         {% csrf_token %}
                         <input type="hidden" name="employee" value="{{ selected_employee.id }}">
                         <input type="hidden" name="form_token" value="{{ form_token }}">
@@ -621,41 +687,40 @@
 <script>
 (function () {
     const thread = document.getElementById("chat-thread");
+    const loadingOverlay = document.getElementById("chat-loading");
     if (thread) {
         thread.scrollTop = thread.scrollHeight;
     }
 
-    const employeeId = "{{ selected_employee_id }}";
-    if (!employeeId) {
-        return;
-    }
-
-    let refreshPausedUntil = 0;
-    const messageInput = document.getElementById("message");
-    const currentUrl = new URL(window.location.href);
-    currentUrl.searchParams.set("employee", employeeId);
-
-    function refreshConversation() {
-        if (Date.now() < refreshPausedUntil) {
+    function showLoading(message) {
+        if (!loadingOverlay) {
             return;
         }
 
-        const nextUrl = new URL(currentUrl.toString());
-        nextUrl.searchParams.set("_chat_refresh", Date.now().toString());
-        window.location.replace(nextUrl.toString());
+        const text = loadingOverlay.querySelector(".chat-loading-text");
+        if (text && message) {
+            text.textContent = message;
+        }
+
+        loadingOverlay.classList.add("is-visible");
+        loadingOverlay.setAttribute("aria-hidden", "false");
     }
 
-    if (messageInput) {
-        messageInput.addEventListener("focus", function () {
-            refreshPausedUntil = Number.MAX_SAFE_INTEGER;
+    document.querySelectorAll("[data-chat-loading-link]").forEach(function (link) {
+        link.addEventListener("click", function () {
+            showLoading("Opening conversation...");
         });
+    });
 
-        messageInput.addEventListener("blur", function () {
-            refreshPausedUntil = Date.now() + 15000;
+    document.querySelectorAll("[data-chat-loading-form]").forEach(function (form) {
+        form.addEventListener("submit", function () {
+            const submitButton = form.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+            }
+            showLoading("Loading conversation...");
         });
-    }
-
-    setInterval(refreshConversation, 10000);
+    });
 })();
 </script>
 {% endif %}

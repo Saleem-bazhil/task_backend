@@ -1,6 +1,6 @@
 from django.contrib import admin, messages
 from django.contrib.auth import get_user_model
-from django.db.models import Count, Max, Q
+from django.db.models import Count, Max, Prefetch, Q
 from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
@@ -21,6 +21,10 @@ class ChatRoomAdmin(ModelAdmin):
     search_fields = ("room_id", "user_one__username", "user_two__username")
     ordering = ("-updated_at",)
     list_select_related = ("user_one", "user_two")
+
+    def get_model_perms(self, request):
+        # Hide raw chat room model from the admin index/sidebar.
+        return {}
 
     @admin.display(description="Participants")
     def participants(self, obj):
@@ -43,6 +47,10 @@ class MessageAdmin(ModelAdmin):
     list_filter = ("timestamp",)
     ordering = ("-timestamp",)
     list_select_related = ("room", "sender", "receiver")
+
+    def get_model_perms(self, request):
+        # Keep the custom live chat view accessible by URL, but hide the raw message model entry.
+        return {}
 
     def get_urls(self):
         urls = super().get_urls()
@@ -76,14 +84,14 @@ class MessageAdmin(ModelAdmin):
         return HttpResponseRedirect(reverse("admin:chat_message_live_chat"))
 
     def live_chat_view(self, request):
-        employees = [
-            user
-            for user in User.objects.filter(is_active=True)
+        employee_queryset = (
+            User.objects.filter(is_active=True)
             .exclude(id=request.user.id)
             .select_related("userprofile")
             .order_by("username")
-            if not is_admin_user(user) and can_chat_with(request.user, user)
-        ]
+        )
+        employees = [user for user in employee_queryset if can_chat_with(request.user, user)]
+        employees_by_id = {employee.id: employee for employee in employees}
 
         selected_employee = None
         room = None
@@ -95,12 +103,10 @@ class MessageAdmin(ModelAdmin):
 
         if selected_user_id:
             try:
-                selected_employee = next(
-                    employee for employee in employees if employee.id == int(selected_user_id)
-                )
+                selected_employee = employees_by_id[int(selected_user_id)]
                 request.session[self.selected_employee_session_key] = selected_employee.id
                 request.session.modified = True
-            except (StopIteration, ValueError):
+            except (KeyError, ValueError):
                 request.session.pop(self.selected_employee_session_key, None)
                 request.session.modified = True
                 messages.error(request, "That employee is not available for chat.")
@@ -135,6 +141,15 @@ class MessageAdmin(ModelAdmin):
             ChatRoom.objects.filter(Q(user_one=request.user) | Q(user_two=request.user))
             .select_related("user_one", "user_two")
             .annotate(last_message_at=Max("messages__timestamp"))
+            .prefetch_related(
+                Prefetch(
+                    "messages",
+                    queryset=Message.objects.select_related("sender", "receiver").order_by(
+                        "-timestamp", "-id"
+                    ),
+                    to_attr="prefetched_messages",
+                )
+            )
             .order_by("-last_message_at", "-updated_at")
         )
 
@@ -146,7 +161,9 @@ class MessageAdmin(ModelAdmin):
             conversation_cards.append(
                 {
                     "employee": other_user,
-                    "last_message": recent_room.messages.order_by("-timestamp", "-id").first(),
+                    "last_message": recent_room.prefetched_messages[0]
+                    if recent_room.prefetched_messages
+                    else None,
                     "is_selected": bool(selected_employee and selected_employee.id == other_user.id),
                 }
             )
