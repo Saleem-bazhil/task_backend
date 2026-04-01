@@ -13,8 +13,7 @@ DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() == "true"
 
 ALLOWED_HOSTS = os.getenv(
     "DJANGO_ALLOWED_HOSTS",
-    "127.0.0.1,localhost," ,
-    "chatapi.bazhilgroups.in",
+    "127.0.0.1,localhost,chatapi.bazhilgroups.in",
 ).split(",")
 
 INSTALLED_APPS = [
@@ -103,10 +102,16 @@ SIMPLE_JWT = {
 }
 
 CORS_ALLOWED_ORIGINS = os.getenv(
-    "chatapi.bazhilgroups.in"
     "CORS_ALLOWED_ORIGINS",
-    "http://localhost:5173,http://127.0.0.1:5173,https://task-frontend-sigma-inky.vercel.app"
+    "http://localhost:5173,http://127.0.0.1:5173,https://task-frontend-sigma-inky.vercel.app,https://chatapi.bazhilgroups.in"
 ).split(",")
+
+CSRF_TRUSTED_ORIGINS = os.getenv(
+    "CSRF_TRUSTED_ORIGINS",
+    "https://chatapi.bazhilgroups.in,http://localhost:8000,http://127.0.0.1:8000",
+).split(",")
+
+CORS_ALLOW_CREDENTIALS = True
 
 UNFOLD = {
     "SITE_TITLE": "RenderWays ",
