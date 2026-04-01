@@ -27,7 +27,9 @@ COPY . .
 RUN chmod +x /app/entrypoint.sh
 
 # ----------- Security: Run as Non-root User -----------
-RUN useradd --create-home --shell /bin/bash appuser
+RUN useradd --create-home --shell /bin/bash appuser && \
+    mkdir -p /app/staticfiles && \
+    chown -R appuser:appuser /app
 USER appuser
 
 # ----------- Expose Port -----------
