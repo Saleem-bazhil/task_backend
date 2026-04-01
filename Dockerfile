@@ -24,6 +24,7 @@ RUN pip install --upgrade pip && \
 
 # ----------- Copy Application Code -----------
 COPY . .
+RUN chmod +x /app/entrypoint.sh
 
 # ----------- Security: Run as Non-root User -----------
 RUN useradd --create-home --shell /bin/bash appuser
@@ -33,4 +34,5 @@ USER appuser
 EXPOSE 8000
 
 # ----------- Start Server -----------
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "atrack.asgi:application"]
