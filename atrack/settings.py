@@ -110,15 +110,22 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
 }
 
-CORS_ALLOWED_ORIGINS = os.getenv(
-    "CORS_ALLOWED_ORIGINS",
-    "http://localhost:5173,http://127.0.0.1:5173,https://task-frontend-sigma-inky.vercel.app,https://chatapi.bazhilgroups.in"
-).split(",")
+CORS_ALLOWED_ORIGINS = [
+    origin
+    for origin in os.getenv(
+        "CORS_ALLOWED_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173,https://task-frontend-sigma-inky.vercel.app,https://chatapi.bazhilgroups.in",
+    ).split(",")
+    if origin
+]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://chatapi.bazhilgroups.in",
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
+    origin
+    for origin in os.getenv(
+        "CSRF_TRUSTED_ORIGINS",
+        "https://chatapi.bazhilgroups.in,http://localhost:8000,http://127.0.0.1:8000",
+    ).split(",")
+    if origin
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -129,13 +136,54 @@ UNFOLD = {
     "SITE_SYMBOL": "dashboard",
     "SHOW_HISTORY": True,
     "SHOW_VIEW_ON_SITE": False,
+    "SIDEBAR": {
+        "show_search": False,
+        "show_all_applications": False,
+        "navigation": [
+            {
+                "title": "Navigation",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Users",
+                        "icon": "group",
+                        "link": "/admin/auth/user/",
+                    },
+                    {
+                        "title": "Groups",
+                        "icon": "shield_person",
+                        "link": "/admin/auth/group/",
+                    },
+                    {
+                        "title": "Tasks",
+                        "icon": "task",
+                        "link": "/admin/task/task/",
+                    },
+                    {
+                        "title": "User Profiles",
+                        "icon": "badge",
+                        "link": "/admin/user/userprofile/",
+                    },
+                    {
+                        "title": "Employee Chat",
+                        "icon": "chat",
+                        "link": "/admin/chat/message/live-chat/",
+                    },
+                ],
+            }
+        ],
+    },
 }
 
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = True
 
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_DOMAIN = os.getenv("SESSION_COOKIE_DOMAIN") or None
+CSRF_COOKIE_DOMAIN = os.getenv("CSRF_COOKIE_DOMAIN") or None
 
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = False
