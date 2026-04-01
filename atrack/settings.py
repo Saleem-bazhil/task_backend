@@ -13,7 +13,8 @@ DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() == "true"
 
 ALLOWED_HOSTS = os.getenv(
     "DJANGO_ALLOWED_HOSTS",
-    "127.0.0.1,localhost,taskapi.bazhilgroups.in"
+    "127.0.0.1,localhost," ,
+    "chatapi.bazhilgroups.in",
 ).split(",")
 
 INSTALLED_APPS = [
@@ -102,13 +103,14 @@ SIMPLE_JWT = {
 }
 
 CORS_ALLOWED_ORIGINS = os.getenv(
+    "chatapi.bazhilgroups.in"
     "CORS_ALLOWED_ORIGINS",
     "http://localhost:5173,http://127.0.0.1:5173,https://task-frontend-sigma-inky.vercel.app"
 ).split(",")
 
 UNFOLD = {
-    "SITE_TITLE": "Atrack Admin",
-    "SITE_HEADER": "Atrack",
+    "SITE_TITLE": "RenderWays ",
+    "SITE_HEADER": "RenderWays",
     "SITE_SYMBOL": "dashboard",
     "SHOW_HISTORY": True,
     "SHOW_VIEW_ON_SITE": False,
