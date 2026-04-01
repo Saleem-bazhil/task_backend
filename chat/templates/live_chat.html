@@ -2,372 +2,624 @@
 
 {% block content %}
 <style>
-    /* Global Shell */
+    :root {
+        --chat-bg: linear-gradient(180deg, #f4f1ea 0%, #ece6db 100%);
+        --chat-surface: rgba(255, 252, 247, 0.94);
+        --chat-surface-strong: #fffdf9;
+        --chat-border: rgba(116, 87, 44, 0.12);
+        --chat-shadow: 0 18px 48px rgba(73, 52, 24, 0.10);
+        --chat-text: #2f2417;
+        --chat-muted: #7d6a56;
+        --chat-accent: #1f6f5f;
+        --chat-accent-dark: #185649;
+        --chat-accent-soft: rgba(31, 111, 95, 0.12);
+        --chat-warm: #c67b45;
+        --chat-thread: linear-gradient(180deg, #f8f4ee 0%, #efe6d8 100%);
+        --chat-me: linear-gradient(135deg, #1f6f5f 0%, #2f8c76 100%);
+        --chat-them: #fffdf9;
+    }
+
+    .chat-page {
+        margin-top: 20px;
+        color: var(--chat-text);
+    }
+
+    .chat-hero {
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 20px;
+        padding: 24px 28px;
+        border: 1px solid var(--chat-border);
+        border-radius: 28px;
+        background:
+            radial-gradient(circle at top right, rgba(198, 123, 69, 0.18), transparent 28%),
+            radial-gradient(circle at left center, rgba(31, 111, 95, 0.12), transparent 30%),
+            var(--chat-bg);
+        box-shadow: var(--chat-shadow);
+    }
+
+    .chat-hero::after {
+        content: "";
+        position: absolute;
+        inset: auto -40px -60px auto;
+        width: 180px;
+        height: 180px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.26);
+        filter: blur(4px);
+    }
+
+    .chat-hero-title {
+        position: relative;
+        margin: 0;
+        font-size: 2rem;
+        line-height: 1.1;
+        letter-spacing: -0.03em;
+    }
+
+    .chat-hero-copy {
+        position: relative;
+        margin: 10px 0 0;
+        max-width: 720px;
+        color: var(--chat-muted);
+        font-size: 15px;
+    }
+
     .chat-shell {
         display: grid;
-        grid-template-columns: 320px minmax(0, 1fr);
-        gap: 24px;
-        margin-top: 20px;
-        height: calc(100vh - 120px); /* Makes the whole shell fit the screen neatly */
-        min-height: 600px;
+        grid-template-columns: 340px minmax(0, 1fr);
+        gap: 22px;
+        min-height: calc(100vh - 220px);
         align-items: stretch;
-        box-sizing: border-box;
     }
 
     .chat-shell * {
         box-sizing: border-box;
     }
 
-    /* Cards */
     .chat-card {
-        background: #fff;
-        border: 1px solid #d9e3ec;
-        border-radius: 12px;
-        box-shadow: 0 8px 24px rgba(17, 24, 39, 0.04);
         display: flex;
         flex-direction: column;
-        overflow: hidden;
         min-height: 0;
+        overflow: hidden;
+        border: 1px solid var(--chat-border);
+        border-radius: 28px;
+        background: var(--chat-surface);
+        box-shadow: var(--chat-shadow);
+        backdrop-filter: blur(12px);
     }
 
-    /* Headers */
     .chat-card-header {
-        padding: 20px 24px;
-        border-bottom: 1px solid #eef3f7;
-        background: #fdfdfd;
-        flex-shrink: 0;
+        padding: 22px 24px 18px;
+        border-bottom: 1px solid rgba(116, 87, 44, 0.08);
+        background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.54));
+    }
+
+    .chat-card-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: var(--chat-accent-soft);
+        color: var(--chat-accent-dark);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
     }
 
     .chat-card-header h2,
     .chat-card-header h3 {
         margin: 0;
-        font-size: 1.25rem;
-        color: #111827;
+        font-size: 1.3rem;
+        line-height: 1.2;
+        letter-spacing: -0.02em;
     }
 
     .chat-card-header p {
-        margin: 6px 0 0 0;
-        color: #61758a;
+        margin: 8px 0 0;
+        color: var(--chat-muted);
         font-size: 14px;
     }
 
-    /* Sidebar Layout */
     .chat-sidebar-section {
-        padding: 20px 24px;
-        border-bottom: 1px solid #eef3f7;
-        flex-shrink: 0;
+        padding: 22px 24px;
+        border-bottom: 1px solid rgba(116, 87, 44, 0.08);
     }
 
     .chat-sidebar-scroll {
         flex: 1;
         min-height: 0;
         overflow-y: auto;
-        padding: 20px 24px;
+        padding: 20px 18px 22px 24px;
     }
 
-    /* Forms & Inputs */
     .chat-label {
         display: block;
+        margin-bottom: 8px;
+        color: var(--chat-muted);
         font-size: 12px;
         font-weight: 700;
-        letter-spacing: 0.06em;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
-        color: #6b7f93;
-        margin-bottom: 8px;
+    }
+
+    .chat-select,
+    .chat-textarea {
+        width: 100%;
+        border: 1px solid rgba(116, 87, 44, 0.16);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.88);
+        color: var(--chat-text);
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
     }
 
     .chat-select {
-        width: 100%;
-        padding: 10px 14px;
-        border-radius: 8px;
-        border: 1px solid #c8d6e3;
-        background: #fff;
+        padding: 13px 14px;
         font-size: 14px;
+    }
+
+    .chat-textarea {
+        min-height: 110px;
+        padding: 16px 18px;
+        resize: vertical;
+        font-family: inherit;
+        font-size: 14px;
+        line-height: 1.55;
     }
 
     .chat-select:focus,
     .chat-textarea:focus {
         outline: none;
-        border-color: #417690;
-        box-shadow: 0 0 0 3px rgba(65, 118, 144, 0.15);
+        border-color: rgba(31, 111, 95, 0.45);
+        box-shadow: 0 0 0 4px rgba(31, 111, 95, 0.12);
+        transform: translateY(-1px);
     }
 
-    /* Buttons */
     .chat-actions {
-        margin-top: 16px;
         display: flex;
-        gap: 10px;
+        gap: 12px;
+        margin-top: 16px;
     }
 
-    .button-primary {
+    .chat-button {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 10px 20px;
-        border-radius: 8px;
+        gap: 8px;
+        padding: 12px 18px;
         border: none;
-        background: #417690;
+        border-radius: 999px;
+        background: linear-gradient(135deg, var(--chat-accent) 0%, #2b8973 100%);
         color: #fff;
         font-size: 14px;
-        font-weight: 600;
+        font-weight: 700;
         cursor: pointer;
         text-decoration: none;
-        transition: background 0.2s ease;
+        box-shadow: 0 10px 24px rgba(31, 111, 95, 0.22);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
     }
 
-    .button-primary:hover {
-        background: #2f5c72;
+    .chat-button:hover {
+        transform: translateY(-1px);
+        filter: saturate(1.05);
+        box-shadow: 0 14px 28px rgba(31, 111, 95, 0.28);
     }
 
-    /* Conversation Links */
+    .chat-button-secondary {
+        background: rgba(255, 255, 255, 0.88);
+        color: var(--chat-text);
+        box-shadow: inset 0 0 0 1px rgba(116, 87, 44, 0.12);
+    }
+
     .conversation-list {
         display: grid;
-        gap: 8px;
+        gap: 10px;
     }
 
     .conversation-link {
         display: block;
-        padding: 12px 16px;
-        border-radius: 8px;
+        padding: 14px 15px;
         border: 1px solid transparent;
-        background: #f8fafc;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.58);
+        color: var(--chat-text);
         text-decoration: none;
-        color: #243447;
-        transition: all 0.2s ease;
+        transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
     .conversation-link:hover {
-        background: #f1f5f9;
+        transform: translateY(-1px);
+        background: rgba(255, 255, 255, 0.92);
+        border-color: rgba(31, 111, 95, 0.12);
+        box-shadow: 0 12px 28px rgba(73, 52, 24, 0.08);
     }
 
     .conversation-link.is-selected {
-        border-color: #417690;
-        background: #eef5f8;
+        border-color: rgba(31, 111, 95, 0.22);
+        background: linear-gradient(135deg, rgba(31, 111, 95, 0.13), rgba(255, 255, 255, 0.96));
+        box-shadow: 0 12px 28px rgba(31, 111, 95, 0.12);
     }
 
-    .conversation-link strong {
-        display: block;
+    .conversation-name {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
         margin-bottom: 4px;
+    }
+
+    .conversation-name strong {
         font-size: 14px;
     }
 
-    .conversation-link span {
-        display: block;
-        color: #61758a;
+    .conversation-tag {
+        flex-shrink: 0;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: rgba(198, 123, 69, 0.14);
+        color: #9a5f31;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .conversation-preview {
+        color: var(--chat-muted);
         font-size: 13px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    /* Chat Thread */
     .chat-thread {
+        position: relative;
         flex: 1;
         min-height: 0;
-        padding: 24px;
-        background: #f8fafc;
         overflow-y: auto;
-        display: flex;
-        flex-direction: column;
+        padding: 24px;
+        background:
+            radial-gradient(circle at top left, rgba(198, 123, 69, 0.10), transparent 24%),
+            radial-gradient(circle at right center, rgba(31, 111, 95, 0.08), transparent 26%),
+            var(--chat-thread);
+    }
+
+    .chat-thread::before {
+        content: "";
+        position: sticky;
+        top: 0;
+        display: block;
+        height: 18px;
+        margin: -24px -24px 8px;
+        background: linear-gradient(180deg, rgba(248, 244, 238, 0.95), rgba(248, 244, 238, 0));
+        pointer-events: none;
     }
 
     .chat-empty {
-        margin: auto;
-        color: #61758a;
+        display: grid;
+        place-items: center;
+        min-height: 100%;
+        padding: 36px;
         text-align: center;
-        font-size: 15px;
+        color: var(--chat-muted);
     }
 
-    /* Messages */
+    .chat-empty-panel {
+        max-width: 380px;
+        padding: 28px 24px;
+        border: 1px dashed rgba(116, 87, 44, 0.18);
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.46);
+    }
+
+    .chat-empty-panel strong {
+        display: block;
+        margin-bottom: 10px;
+        color: var(--chat-text);
+        font-size: 1.05rem;
+    }
+
+    .message-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
     .msg-wrapper {
         display: flex;
         flex-direction: column;
-        margin-bottom: 20px;
-        max-width: 80%;
+        gap: 8px;
+        max-width: min(78%, 720px);
     }
 
     .msg-wrapper.me {
-        align-self: flex-end;
+        margin-left: auto;
         align-items: flex-end;
     }
 
     .msg-wrapper.them {
-        align-self: flex-start;
+        margin-right: auto;
         align-items: flex-start;
     }
 
     .msg-meta {
-        font-size: 12px;
-        color: #8899a6;
-        margin-bottom: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
         padding: 0 4px;
+        color: var(--chat-muted);
+        font-size: 12px;
+    }
+
+    .msg-author {
+        font-weight: 700;
+        color: #5b4732;
+    }
+
+    .msg-time {
+        opacity: 0.85;
     }
 
     .msg-bubble {
-        padding: 12px 16px;
-        border-radius: 12px;
+        padding: 14px 16px;
+        border-radius: 22px;
+        line-height: 1.6;
         font-size: 14px;
-        line-height: 1.5;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+        word-break: break-word;
+        box-shadow: 0 10px 22px rgba(73, 52, 24, 0.07);
     }
 
     .msg-wrapper.me .msg-bubble {
-        background: #417690;
         color: #fff;
-        border-bottom-right-radius: 4px;
+        background: var(--chat-me);
+        border-bottom-right-radius: 8px;
     }
 
     .msg-wrapper.them .msg-bubble {
-        background: #fff;
-        color: #243447;
-        border: 1px solid #e2e8f0;
-        border-bottom-left-radius: 4px;
+        color: var(--chat-text);
+        background: var(--chat-them);
+        border: 1px solid rgba(116, 87, 44, 0.10);
+        border-bottom-left-radius: 8px;
     }
 
-    /* Composer */
     .chat-composer {
-        flex-shrink: 0;
-        padding: 20px 24px;
-        border-top: 1px solid #eef3f7;
-        background: #fff;
+        padding: 18px 22px 22px;
+        border-top: 1px solid rgba(116, 87, 44, 0.08);
+        background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 253, 249, 0.98));
     }
 
-    .chat-textarea {
-        width: 100%;
-        min-height: 80px;
-        padding: 12px 14px;
-        border-radius: 8px;
-        border: 1px solid #c8d6e3;
-        resize: vertical;
-        font-family: inherit;
-        font-size: 14px;
+    .chat-composer-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-top: 14px;
     }
 
     .chat-hint {
-        color: #8899a6;
+        color: var(--chat-muted);
         font-size: 12px;
-        margin-top: 10px;
-        display: block;
+        line-height: 1.5;
     }
 
-    /* Responsive */
-    @media (max-width: 960px) {
+    .chat-summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-top: 14px;
+        padding: 12px 14px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.64);
+        color: var(--chat-muted);
+        font-size: 13px;
+    }
+
+    .chat-summary strong {
+        color: var(--chat-text);
+    }
+
+    @media (max-width: 1100px) {
         .chat-shell {
             grid-template-columns: 1fr;
-            height: auto;
             min-height: 0;
         }
+
         .chat-card {
-            height: 600px;
+            min-height: 620px;
         }
+
         .msg-wrapper {
-            max-width: 95%;
+            max-width: 92%;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .chat-hero {
+            padding: 20px;
+            border-radius: 22px;
+        }
+
+        .chat-hero-title {
+            font-size: 1.65rem;
+        }
+
+        .chat-card,
+        .chat-thread,
+        .chat-composer,
+        .chat-sidebar-section,
+        .chat-sidebar-scroll,
+        .chat-card-header {
+            border-radius: 0;
+        }
+
+        .chat-card {
+            border-radius: 22px;
+        }
+
+        .chat-card-header,
+        .chat-thread,
+        .chat-composer,
+        .chat-sidebar-section,
+        .chat-sidebar-scroll {
+            padding-left: 18px;
+            padding-right: 18px;
+        }
+
+        .chat-composer-bar,
+        .chat-summary {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .chat-button {
+            width: 100%;
         }
     }
 </style>
 
-<div class="chat-shell">
-    <section class="chat-card">
-        <div class="chat-card-header">
-            <h2>Employee Chat</h2>
-            <p>Start or continue a direct conversation.</p>
-        </div>
-
-        <div class="chat-sidebar-section">
-            <form method="get">
-                <label for="employee" class="chat-label">Choose employee</label>
-                <select id="employee" name="employee" class="chat-select">
-                    <option value="">Select an employee</option>
-                    {% for employee in employees %}
-                        <option value="{{ employee.id }}" {% if selected_employee and selected_employee.id == employee.id %}selected{% endif %}>
-                            {{ employee.username }}{% if employee.first_name or employee.last_name %} - {{ employee.first_name }} {{ employee.last_name }}{% endif %}
-                        </option>
-                    {% endfor %}
-                </select>
-                <div class="chat-actions">
-                    <button type="submit" class="button-primary">Open Chat</button>
-                </div>
-            </form>
-        </div>
-
-        <div class="chat-sidebar-scroll">
-            <span class="chat-label">Recent conversations</span>
-            <div class="conversation-list">
-                {% for conversation in conversation_cards %}
-                    <a href="?employee={{ conversation.employee.id }}" class="conversation-link{% if conversation.is_selected %} is-selected{% endif %}">
-                        <strong>{{ conversation.employee.username }}</strong>
-                        <span>
-                            {% if conversation.last_message %}
-                                {{ conversation.last_message.content|truncatechars:55 }}
-                            {% else %}
-                                No messages yet
-                            {% endif %}
-                        </span>
-                    </a>
-                {% empty %}
-                    <span class="chat-hint">No employee conversations yet.</span>
-                {% endfor %}
-            </div>
-        </div>
+<div class="chat-page">
+    <section class="chat-hero">
+        <h1 class="chat-hero-title">Message center</h1>
+        <p class="chat-hero-copy">
+            Keep employee conversations organized in one calm workspace built for quick replies,
+            readable history, and smooth handoff from the admin side.
+        </p>
     </section>
 
-    <section class="chat-card">
-        <div class="chat-card-header">
-            <h3>
-                {% if selected_employee %}
-                    Conversation with {{ selected_employee.username }}
-                {% else %}
-                    Select an employee to begin
-                {% endif %}
-            </h3>
-            <p>
-                {% if selected_employee %}
-                    Messages here are sent from your admin account.
-                {% else %}
-                    Choose an employee from the left to open their conversation.
-                {% endif %}
-            </p>
-        </div>
+    <div class="chat-shell">
+        <section class="chat-card">
+            <div class="chat-card-header">
+                <div class="chat-card-kicker">Conversations</div>
+                <h2>Employee chat</h2>
+                <p>Open an existing thread or start a new direct conversation.</p>
+            </div>
 
-        <div class="chat-thread" id="chat-thread">
-            {% if selected_employee %}
-                {% for message in chat_messages %}
-                    <div class="msg-wrapper {% if message.sender_id == request.user.id %}me{% else %}them{% endif %}">
-                        <span class="msg-meta">{{ message.sender.username }} • {{ message.timestamp|date:"M j, Y, g:i a" }}</span>
-                        <div class="msg-bubble">
-                            <div>{{ message.content|linebreaksbr }}</div>
-                        </div>
-                    </div>
-                {% empty %}
-                    <div class="chat-empty">No messages yet. Send the first message to start.</div>
-                {% endfor %}
-            {% else %}
-                <div class="chat-empty">Pick an employee to view messages and send a reply.</div>
-            {% endif %}
-        </div>
-
-        {% if selected_employee %}
-            <div class="chat-composer">
-                <form method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="employee" value="{{ selected_employee.id }}">
-                    <input type="hidden" name="form_token" value="{{ form_token }}">
-                    <label for="message" class="chat-label" style="display:none;">New message</label>
-                    <textarea id="message" name="message" class="chat-textarea" placeholder="Write a helpful message to {{ selected_employee.username }}..." required></textarea>
-                    <div class="chat-actions" style="justify-content: space-between; align-items: center;">
-                        <span class="chat-hint" style="margin: 0;">This admin view is optimized for direct admin-to-employee support.</span>
-                        <button type="submit" class="button-primary">Send Message</button>
+            <div class="chat-sidebar-section">
+                <form method="get">
+                    <label for="employee" class="chat-label">Choose employee</label>
+                    <select id="employee" name="employee" class="chat-select">
+                        <option value="">Select an employee</option>
+                        {% for employee in employees %}
+                            <option value="{{ employee.id }}" {% if selected_employee and selected_employee.id == employee.id %}selected{% endif %}>
+                                {{ employee.username }}{% if employee.first_name or employee.last_name %} - {{ employee.first_name }} {{ employee.last_name }}{% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <div class="chat-actions">
+                        <button type="submit" class="chat-button">Open chat</button>
                     </div>
                 </form>
             </div>
-        {% endif %}
-    </section>
+
+            <div class="chat-sidebar-scroll">
+                <span class="chat-label">Recent conversations</span>
+                <div class="conversation-list">
+                    {% for conversation in conversation_cards %}
+                        <a href="?employee={{ conversation.employee.id }}" class="conversation-link{% if conversation.is_selected %} is-selected{% endif %}">
+                            <div class="conversation-name">
+                                <strong>{{ conversation.employee.username }}</strong>
+                                {% if conversation.is_selected %}
+                                    <span class="conversation-tag">Open</span>
+                                {% endif %}
+                            </div>
+                            <div class="conversation-preview">
+                                {% if conversation.last_message %}
+                                    {{ conversation.last_message.content|truncatechars:55 }}
+                                {% else %}
+                                    No messages yet
+                                {% endif %}
+                            </div>
+                        </a>
+                    {% empty %}
+                        <span class="chat-hint">No employee conversations yet.</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+
+        <section class="chat-card">
+            <div class="chat-card-header">
+                <div class="chat-card-kicker">Active thread</div>
+                <h3>
+                    {% if selected_employee %}
+                        Conversation with {{ selected_employee.username }}
+                    {% else %}
+                        Select an employee to begin
+                    {% endif %}
+                </h3>
+                <p>
+                    {% if selected_employee %}
+                        Messages from this panel are sent from your admin account and appear in chronological order.
+                    {% else %}
+                        Choose an employee from the left to view messages and send a reply.
+                    {% endif %}
+                </p>
+            </div>
+
+            <div class="chat-thread" id="chat-thread">
+                {% if selected_employee %}
+                    {% if chat_messages %}
+                        <div class="message-stack">
+                            {% for message in chat_messages %}
+                                <div class="msg-wrapper {% if message.sender_id == request.user.id %}me{% else %}them{% endif %}">
+                                    <div class="msg-meta">
+                                        <span class="msg-author">{{ message.sender.username }}</span>
+                                        <span class="msg-time">{{ message.timestamp|date:"M j, Y, g:i a" }}</span>
+                                    </div>
+                                    <div class="msg-bubble">{{ message.content|linebreaksbr }}</div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="chat-empty">
+                            <div class="chat-empty-panel">
+                                <strong>No messages yet</strong>
+                                Send the first message to start this conversation.
+                            </div>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="chat-empty">
+                        <div class="chat-empty-panel">
+                            <strong>No conversation selected</strong>
+                            Pick an employee from the left to open the thread and begin messaging.
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if selected_employee %}
+                <div class="chat-composer">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="employee" value="{{ selected_employee.id }}">
+                        <input type="hidden" name="form_token" value="{{ form_token }}">
+                        <label for="message" class="chat-label">New message</label>
+                        <textarea id="message" name="message" class="chat-textarea" placeholder="Write a clear, helpful message to {{ selected_employee.username }}..." required></textarea>
+                        <div class="chat-summary">
+                            <strong>Replying to {{ selected_employee.username }}</strong>
+                            <span>This admin view is optimized for direct admin-to-employee support.</span>
+                        </div>
+                        <div class="chat-composer-bar">
+                            <span class="chat-hint">Tip: keep messages short and action-oriented so employees can respond faster.</span>
+                            <button type="submit" class="chat-button">Send message</button>
+                        </div>
+                    </form>
+                </div>
+            {% endif %}
+        </section>
+    </div>
 </div>
 
 {% if selected_employee %}
 <script>
 (function () {
-    // Scroll chat thread to bottom on load
     const thread = document.getElementById("chat-thread");
     if (thread) {
         thread.scrollTop = thread.scrollHeight;

@@ -1,6 +1,10 @@
 import os
 from datetime import timedelta
 from pathlib import Path
+import dj_database_url
+from dotenv import load_dotenv
+
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -10,7 +14,7 @@ ALLOWED_HOSTS = [host for host in os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,l
 
 INSTALLED_APPS = [
     "corsheaders",
-    'jazzmin',
+    "unfold",
     "channels",
     "daphne",
     "rest_framework",
@@ -61,24 +65,9 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels.layers.InMemoryChannelLayer",
     },
 }
-
 DATABASES = {
-    "default": {
-        "ENGINE": os.getenv("DB_ENGINE", "django.db.backends.sqlite3"),
-        "NAME": os.getenv("DB_NAME", BASE_DIR / "db.sqlite3"),
-    }
+    "default": dj_database_url.parse(os.getenv("DATABASE_URL"))
 }
-
-if DATABASES["default"]["ENGINE"] != "django.db.backends.sqlite3":
-    DATABASES["default"].update(
-        {
-            "USER": os.getenv("DB_USER", ""),
-            "PASSWORD": os.getenv("DB_PASSWORD", ""),
-            "HOST": os.getenv("DB_HOST", "localhost"),
-            "PORT": os.getenv("DB_PORT", "5432"),
-        }
-    )
-
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -117,92 +106,10 @@ CORS_ALLOWED_ORIGINS = [
     if origin
 ]
 
-JAZZMIN_SETTINGS = {
-    # Title of the window
-    "site_title": "Renderways",
-
-    # Title on the login screen
-    "site_header": "Renderways",
-
-    # Title on the brand
-    "site_brand": "Renderways",
-
-    # Logo to use for your site (Changed to None so it doesn't break looking for a missing image)
-    "site_logo": None,
-
-    "login_logo": None,
-    "login_logo_dark": None,
-    "site_logo_classes": "img-circle",
-    "site_icon": None,
-
-    # Welcome text on the login screen
-    "welcome_sign": "Welcome to Renderways",
-
-    # Copyright on the footer
-    "copyright": "Renderways Workspace",
-
-    "search_model": ["auth.User", "auth.Group"],
-    "user_avatar": None,
-
-    ############
-    # Top Menu #
-    ############
-    "topmenu_links": [],
-
-    #############
-    # User Menu #
-    #############
-    "usermenu_links": [
-        {"model": "auth.user"}
-    ],
-
-    #############
-    # Side Menu #
-    #############
-    "show_sidebar": True,
-    "navigation_expanded": True,
-    "hide_apps": [],
-    "hide_models": ["chat.Message", "chat.ChatRoom"],
-
-    # Reordered based on the apps actually installed in your Django project
-    "order_with_respect_to": ["auth", "user", "task", "chat"],
-
-    # Add an explicit employee chat link in the chat app menu
-    "custom_links": {
-        "chat": [
-            {
-                "name": "Employee Chat",
-                "url": "admin:chat_message_live_chat",
-                "icon": "fas fa-comments",
-            },
-        ]
-    },
-
-    "icons": {
-        "auth": "fas fa-users-cog",
-        "auth.user": "fas fa-user",
-        "auth.Group": "fas fa-users",
-        # Custom icons for your actual apps
-        "user.User": "fas fa-user-circle",       
-        "task.Task": "fas fa-tasks",             
-        "chat.Message": "fas fa-comments",       
-        "chat.Room": "fas fa-layer-group",
-    },
-
-    "default_icon_parents": "fas fa-chevron-circle-right",
-    "default_icon_children": "fas fa-circle",
-    "related_modal_active": False,
-    "custom_css": None,
-    "custom_js": None,
-    "use_google_fonts_cdn": True,
-    "show_ui_builder": False,
-
-    ###############
-    # Change view #
-    ###############
-    "changeform_format": "horizontal_tabs",
-    "changeform_format_overrides": {"auth.user": "collapsible", "auth.group": "vertical_tabs"},
-    
-    # Changed to False unless you actually have multiple languages set up
-    "language_chooser": False, 
+UNFOLD = {
+    "SITE_TITLE": "Atrack Admin",
+    "SITE_HEADER": "Atrack",
+    "SITE_SYMBOL": "dashboard",
+    "SHOW_HISTORY": True,
+    "SHOW_VIEW_ON_SITE": False,
 }
