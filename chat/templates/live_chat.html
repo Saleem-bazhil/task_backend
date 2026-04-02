@@ -110,6 +110,35 @@
         font-size: 15px;
     }
 
+    .chat-hero-meta {
+        position: relative;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 18px;
+    }
+
+    .chat-hero-stat {
+        min-width: 130px;
+        padding: 12px 14px;
+        border: 1px solid rgba(116, 87, 44, 0.08);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.56);
+        backdrop-filter: blur(8px);
+    }
+
+    .chat-hero-stat strong {
+        display: block;
+        font-size: 1.2rem;
+    }
+
+    .chat-hero-stat span {
+        color: var(--chat-muted);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
     .chat-shell {
         display: grid;
         grid-template-columns: 340px minmax(0, 1fr);
@@ -168,6 +197,54 @@
         margin: 8px 0 0;
         color: var(--chat-muted);
         font-size: 14px;
+    }
+
+    .chat-card-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 18px;
+    }
+
+    .chat-live-group {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .chat-live-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.82);
+        color: var(--chat-text);
+        box-shadow: inset 0 0 0 1px rgba(116, 87, 44, 0.10);
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .chat-live-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+        background: #f59e0b;
+        box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.14);
+        transition: background 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .chat-live-pill.is-live .chat-live-dot {
+        background: #16a34a;
+        box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.14);
+    }
+
+    .chat-live-pill.is-offline .chat-live-dot {
+        background: #dc2626;
+        box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.14);
     }
 
     .chat-sidebar-section {
@@ -268,6 +345,12 @@
         box-shadow: inset 0 0 0 1px rgba(116, 87, 44, 0.12);
     }
 
+    .chat-button-ghost {
+        background: rgba(255, 255, 255, 0.88);
+        color: var(--chat-text);
+        box-shadow: inset 0 0 0 1px rgba(116, 87, 44, 0.12);
+    }
+
     .conversation-list {
         display: grid;
         gap: 10px;
@@ -329,6 +412,15 @@
         text-overflow: ellipsis;
     }
 
+    .conversation-preview.is-empty {
+        font-style: italic;
+    }
+
+    .conversation-link.is-fresh {
+        border-color: rgba(198, 123, 69, 0.24);
+        background: linear-gradient(135deg, rgba(198, 123, 69, 0.10), rgba(255, 255, 255, 0.96));
+    }
+
     .chat-thread {
         position: relative;
         flex: 1;
@@ -350,6 +442,29 @@
         margin: -24px -24px 8px;
         background: linear-gradient(180deg, rgba(248, 244, 238, 0.95), rgba(248, 244, 238, 0));
         pointer-events: none;
+    }
+
+    .chat-thread-topbar {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin: -24px -24px 20px;
+        padding: 18px 24px 14px;
+        background: linear-gradient(180deg, rgba(248, 244, 238, 0.96), rgba(248, 244, 238, 0.82), rgba(248, 244, 238, 0));
+    }
+
+    .chat-thread-topbar strong {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 14px;
+    }
+
+    .chat-thread-topbar span {
+        color: var(--chat-muted);
+        font-size: 12px;
     }
 
     .chat-empty {
@@ -477,6 +592,24 @@
         color: var(--chat-text);
     }
 
+    .chat-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--chat-muted);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        cursor: pointer;
+    }
+
+    .chat-toggle input {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--chat-accent);
+    }
+
     @media (max-width: 1100px) {
         .chat-shell {
             grid-template-columns: 1fr;
@@ -525,7 +658,9 @@
         }
 
         .chat-composer-bar,
-        .chat-summary {
+        .chat-summary,
+        .chat-card-toolbar,
+        .chat-thread-topbar {
             flex-direction: column;
             align-items: flex-start;
         }
@@ -556,6 +691,20 @@
             Keep employee conversations organized in one calm workspace built for quick replies,
             readable history, and smooth handoff from the admin side.
         </p>
+        <div class="chat-hero-meta">
+            <div class="chat-hero-stat">
+                <strong>{{ conversation_count }}</strong>
+                <span>Active threads</span>
+            </div>
+            <div class="chat-hero-stat">
+                <strong id="chat-message-count">{{ message_count }}</strong>
+                <span>Messages shown</span>
+            </div>
+            <div class="chat-hero-stat">
+                <strong id="chat-refresh-state">Auto</strong>
+                <span>Refresh mode</span>
+            </div>
+        </div>
     </section>
 
     <div class="chat-shell">
@@ -585,16 +734,16 @@
 
             <div class="chat-sidebar-scroll">
                 <span class="chat-label">Recent conversations</span>
-                <div class="conversation-list">
+                <div class="conversation-list" id="conversation-list">
                     {% for conversation in conversation_cards %}
-                        <a href="?employee={{ conversation.employee.id }}" class="conversation-link{% if conversation.is_selected %} is-selected{% endif %}" data-chat-loading-link>
+                        <a href="?employee={{ conversation.employee.id }}" class="conversation-link{% if conversation.is_selected %} is-selected{% endif %}" data-chat-loading-link data-employee-id="{{ conversation.employee.id }}">
                             <div class="conversation-name">
                                 <strong>{{ conversation.employee.username }}</strong>
                                 {% if conversation.is_selected %}
                                     <span class="conversation-tag">Open</span>
                                 {% endif %}
                             </div>
-                            <div class="conversation-preview">
+                            <div class="conversation-preview{% if not conversation.last_message %} is-empty{% endif %}" data-preview>
                                 {% if conversation.last_message %}
                                     {{ conversation.last_message.content|truncatechars:55 }}
                                 {% else %}
@@ -626,14 +775,42 @@
                         Choose an employee from the left to view messages and send a reply.
                     {% endif %}
                 </p>
+                {% if selected_employee %}
+                    <div class="chat-card-toolbar">
+                        <div class="chat-live-group">
+                            <div class="chat-live-pill is-live" id="chat-live-status">
+                                <span class="chat-live-dot"></span>
+                                <span id="chat-live-status-label">Live updates on</span>
+                            </div>
+                            <div class="chat-live-pill">
+                                <span>Room</span>
+                                <strong id="chat-room-label">{{ selected_room_id }}</strong>
+                            </div>
+                        </div>
+                        <div class="chat-live-group">
+                            <label class="chat-toggle" for="chat-auto-refresh">
+                                <input id="chat-auto-refresh" type="checkbox" checked>
+                                Auto refresh
+                            </label>
+                            <button type="button" class="chat-button chat-button-ghost" id="chat-refresh-button">Refresh now</button>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
 
-            <div class="chat-thread" id="chat-thread">
+            <div class="chat-thread" id="chat-thread" data-feed-url="{{ live_feed_url }}" data-selected-employee="{{ selected_employee_id }}" data-room-id="{{ selected_room_id }}" data-current-user="{{ request.user.id }}">
                 {% if selected_employee %}
+                    <div class="chat-thread-topbar">
+                        <div>
+                            <strong id="chat-thread-title">{{ selected_employee.username }}</strong>
+                            <span id="chat-thread-subtitle">Messages update automatically while this thread is open.</span>
+                        </div>
+                        <span id="chat-last-sync">Waiting for first sync...</span>
+                    </div>
                     {% if chat_messages %}
-                        <div class="message-stack">
+                        <div class="message-stack" id="message-stack">
                             {% for message in chat_messages %}
-                                <div class="msg-wrapper {% if message.sender_id == request.user.id %}me{% else %}them{% endif %}">
+                                <div class="msg-wrapper {% if message.sender_id == request.user.id %}me{% else %}them{% endif %}" data-message-id="{{ message.id }}">
                                     <div class="msg-meta">
                                         <span class="msg-author">{{ message.sender.username }}</span>
                                         <span class="msg-time">{{ message.timestamp|date:"M j, Y, g:i a" }}</span>
@@ -643,7 +820,7 @@
                             {% endfor %}
                         </div>
                     {% else %}
-                        <div class="chat-empty">
+                        <div class="chat-empty" id="chat-empty-state">
                             <div class="chat-empty-panel">
                                 <strong>No messages yet</strong>
                                 Send the first message to start this conversation.
@@ -688,6 +865,21 @@
 (function () {
     const thread = document.getElementById("chat-thread");
     const loadingOverlay = document.getElementById("chat-loading");
+    const autoRefreshInput = document.getElementById("chat-auto-refresh");
+    const refreshButton = document.getElementById("chat-refresh-button");
+    const liveStatus = document.getElementById("chat-live-status");
+    const liveStatusLabel = document.getElementById("chat-live-status-label");
+    const lastSync = document.getElementById("chat-last-sync");
+    const messageCount = document.getElementById("chat-message-count");
+    const refreshState = document.getElementById("chat-refresh-state");
+    const roomLabel = document.getElementById("chat-room-label");
+    const conversationList = document.getElementById("conversation-list");
+    const threadTitle = document.getElementById("chat-thread-title");
+    const feedUrl = thread ? thread.dataset.feedUrl : "";
+    const selectedEmployeeId = thread ? thread.dataset.selectedEmployee : "";
+    let refreshTimer = null;
+    let isRefreshing = false;
+
     if (thread) {
         thread.scrollTop = thread.scrollHeight;
     }
@@ -706,6 +898,185 @@
         loadingOverlay.setAttribute("aria-hidden", "false");
     }
 
+    function escapeHtml(value) {
+        return String(value || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+
+    function formatMessageContent(value) {
+        return escapeHtml(value).replace(/\n/g, "<br>");
+    }
+
+    function setLiveState(mode, label) {
+        if (!liveStatus || !liveStatusLabel || !refreshState) {
+            return;
+        }
+
+        liveStatus.classList.remove("is-live", "is-offline");
+        if (mode === "live") {
+            liveStatus.classList.add("is-live");
+            refreshState.textContent = "Auto";
+        } else if (mode === "offline") {
+            liveStatus.classList.add("is-offline");
+            refreshState.textContent = "Paused";
+        } else {
+            refreshState.textContent = "Sync";
+        }
+
+        liveStatusLabel.textContent = label;
+    }
+
+    function updateLastSync(text) {
+        if (lastSync) {
+            lastSync.textContent = text;
+        }
+    }
+
+    function renderMessages(messages) {
+        if (!thread) {
+            return;
+        }
+
+        const previousHeight = thread.scrollHeight;
+        const isNearBottom = thread.scrollTop + thread.clientHeight >= previousHeight - 120;
+        let stack = document.getElementById("message-stack");
+        const emptyState = document.getElementById("chat-empty-state");
+
+        if (emptyState) {
+            emptyState.remove();
+        }
+
+        if (!stack) {
+            stack = document.createElement("div");
+            stack.className = "message-stack";
+            stack.id = "message-stack";
+            thread.appendChild(stack);
+        }
+
+        stack.innerHTML = messages.map(function (message) {
+            return [
+                '<div class="msg-wrapper ' + (message.is_me ? "me" : "them") + '" data-message-id="' + message.id + '">',
+                '  <div class="msg-meta">',
+                '    <span class="msg-author">' + escapeHtml(message.sender_name) + '</span>',
+                '    <span class="msg-time">' + escapeHtml(message.timestamp_label) + '</span>',
+                "  </div>",
+                '  <div class="msg-bubble">' + formatMessageContent(message.content) + "</div>",
+                "</div>"
+            ].join("");
+        }).join("");
+
+        if (messageCount) {
+            messageCount.textContent = messages.length;
+        }
+
+        if (isNearBottom) {
+            thread.scrollTop = thread.scrollHeight;
+        }
+    }
+
+    function updateConversationCards(cards) {
+        if (!conversationList) {
+            return;
+        }
+
+        cards.forEach(function (card) {
+            const link = conversationList.querySelector('[data-employee-id="' + card.employee_id + '"]');
+            if (!link) {
+                return;
+            }
+
+            link.classList.toggle("is-selected", !!card.is_selected);
+            link.classList.toggle("is-fresh", !!card.has_messages && !card.is_selected);
+
+            const preview = link.querySelector("[data-preview]");
+            if (preview) {
+                preview.textContent = card.has_messages ? card.preview : "No messages yet";
+                preview.classList.toggle("is-empty", !card.has_messages);
+            }
+
+            let tag = link.querySelector(".conversation-tag");
+            if (card.is_selected && !tag) {
+                tag = document.createElement("span");
+                tag.className = "conversation-tag";
+                tag.textContent = "Open";
+                const nameRow = link.querySelector(".conversation-name");
+                if (nameRow) {
+                    nameRow.appendChild(tag);
+                }
+            } else if (!card.is_selected && tag) {
+                tag.remove();
+            }
+        });
+    }
+
+    function fetchConversation(showBusy) {
+        if (!feedUrl || !selectedEmployeeId || isRefreshing) {
+            return;
+        }
+
+        isRefreshing = true;
+        if (showBusy) {
+            setLiveState("sync", "Refreshing conversation...");
+        }
+
+        fetch(feedUrl + "?employee=" + encodeURIComponent(selectedEmployeeId), {
+            credentials: "same-origin",
+            headers: {
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error("Unable to refresh chat.");
+                }
+                return response.json();
+            })
+            .then(function (payload) {
+                renderMessages(payload.messages || []);
+                updateConversationCards(payload.conversation_cards || []);
+                if (roomLabel && payload.room_id) {
+                    roomLabel.textContent = payload.room_id;
+                }
+                if (threadTitle && payload.selected_employee) {
+                    threadTitle.textContent = payload.selected_employee.username;
+                }
+                updateLastSync("Last synced just now");
+                setLiveState(
+                    autoRefreshInput && autoRefreshInput.checked ? "live" : "offline",
+                    autoRefreshInput && autoRefreshInput.checked ? "Live updates on" : "Live updates paused"
+                );
+            })
+            .catch(function () {
+                updateLastSync("Refresh failed. Try again.");
+                setLiveState("offline", "Connection issue");
+            })
+            .finally(function () {
+                isRefreshing = false;
+            });
+    }
+
+    function startAutoRefresh() {
+        if (!autoRefreshInput || !autoRefreshInput.checked || !selectedEmployeeId) {
+            return;
+        }
+
+        window.clearInterval(refreshTimer);
+        refreshTimer = window.setInterval(function () {
+            fetchConversation(false);
+        }, 4000);
+        setLiveState("live", "Live updates on");
+    }
+
+    function stopAutoRefresh() {
+        window.clearInterval(refreshTimer);
+        refreshTimer = null;
+        setLiveState("offline", "Live updates paused");
+    }
+
     document.querySelectorAll("[data-chat-loading-link]").forEach(function (link) {
         link.addEventListener("click", function () {
             showLoading("Opening conversation...");
@@ -721,6 +1092,28 @@
             showLoading("Loading conversation...");
         });
     });
+
+    if (refreshButton) {
+        refreshButton.addEventListener("click", function () {
+            fetchConversation(true);
+        });
+    }
+
+    if (autoRefreshInput) {
+        autoRefreshInput.addEventListener("change", function () {
+            if (autoRefreshInput.checked) {
+                startAutoRefresh();
+                fetchConversation(true);
+                return;
+            }
+            stopAutoRefresh();
+        });
+    }
+
+    if (selectedEmployeeId) {
+        startAutoRefresh();
+        fetchConversation(false);
+    }
 })();
 </script>
 {% endif %}

@@ -1,10 +1,11 @@
 from django.contrib import admin, messages
 from django.contrib.auth import get_user_model
 from django.db.models import Count, Max, Prefetch, Q
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from django.utils.crypto import get_random_string
+from django.utils.formats import date_format
 from django.utils.text import Truncator
 from unfold.admin import ModelAdmin
 
@@ -55,6 +56,11 @@ class MessageAdmin(ModelAdmin):
     def get_urls(self):
         urls = super().get_urls()
         custom_urls = [
+            path(
+                "live-chat/feed/",
+                self.admin_site.admin_view(self.live_chat_feed_view),
+                name="chat_message_live_chat_feed",
+            ),
             path(
                 "live-chat/",
                 self.admin_site.admin_view(self.live_chat_view),
@@ -132,13 +138,94 @@ class MessageAdmin(ModelAdmin):
                 messages.success(request, f"Message sent to {selected_employee.username}.")
                 return HttpResponseRedirect(f"{request.path}?employee={selected_employee.id}")
 
-        chat_messages = (
-            room.messages.select_related("sender", "receiver").order_by("timestamp", "id")
-            if room
-            else Message.objects.none()
+        chat_messages = self._get_chat_messages(room)
+        conversation_cards = self._get_conversation_cards(request.user, selected_employee)
+
+        context = {
+            **self.admin_site.each_context(request),
+            "opts": self.model._meta,
+            "title": "Admin chat with employees",
+            "employees": employees,
+            "selected_employee": selected_employee,
+            "chat_messages": chat_messages,
+            "conversation_cards": conversation_cards,
+            "form_token": self._issue_form_token(request),
+            "selected_employee_id": selected_employee.id if selected_employee else "",
+            "selected_room_id": room.room_id if room else "",
+            "live_feed_url": reverse("admin:chat_message_live_chat_feed"),
+            "conversation_count": len(conversation_cards),
+            "message_count": chat_messages.count() if room else 0,
+        }
+        return TemplateResponse(request, "live_chat.html", context)
+
+    def live_chat_feed_view(self, request):
+        employee_id = request.GET.get("employee")
+        selected_employee = self._get_selected_employee(request, employee_id)
+        room = get_or_create_room_for_users(request.user, selected_employee) if selected_employee else None
+        chat_messages = list(self._get_chat_messages(room)) if room else []
+        conversation_cards = self._get_conversation_cards(request.user, selected_employee)
+
+        return JsonResponse(
+            {
+                "selected_employee": {
+                    "id": selected_employee.id,
+                    "username": selected_employee.username,
+                    "full_name": selected_employee.get_full_name().strip(),
+                }
+                if selected_employee
+                else None,
+                "room_id": room.room_id if room else "",
+                "message_count": len(chat_messages),
+                "messages": [
+                    {
+                        "id": message.id,
+                        "content": message.content,
+                        "timestamp": message.timestamp.isoformat(),
+                        "timestamp_label": date_format(message.timestamp, "M j, Y, P"),
+                        "sender_id": message.sender_id,
+                        "sender_name": message.sender.username,
+                        "is_me": message.sender_id == request.user.id,
+                    }
+                    for message in chat_messages
+                ],
+                "conversation_cards": [
+                    {
+                        "employee_id": card["employee"].id,
+                        "username": card["employee"].username,
+                        "is_selected": card["is_selected"],
+                        "preview": card["last_message"].content if card["last_message"] else "",
+                        "has_messages": bool(card["last_message"]),
+                    }
+                    for card in conversation_cards
+                ],
+            }
         )
+
+    def _get_selected_employee(self, request, employee_id):
+        if not employee_id:
+            return None
+
+        employee_queryset = (
+            User.objects.filter(is_active=True)
+            .exclude(id=request.user.id)
+            .select_related("userprofile")
+            .order_by("username")
+        )
+        employees = [user for user in employee_queryset if can_chat_with(request.user, user)]
+        employees_by_id = {employee.id: employee for employee in employees}
+        try:
+            return employees_by_id[int(employee_id)]
+        except (KeyError, ValueError):
+            return None
+
+    def _get_chat_messages(self, room):
+        if not room:
+            return Message.objects.none()
+        return room.messages.select_related("sender", "receiver").order_by("timestamp", "id")
+
+    def _get_conversation_cards(self, admin_user, selected_employee):
         recent_rooms = (
-            ChatRoom.objects.filter(Q(user_one=request.user) | Q(user_two=request.user))
+            ChatRoom.objects.filter(Q(user_one=admin_user) | Q(user_two=admin_user))
             .select_related("user_one", "user_two")
             .annotate(last_message_at=Max("messages__timestamp"))
             .prefetch_related(
@@ -155,7 +242,7 @@ class MessageAdmin(ModelAdmin):
 
         conversation_cards = []
         for recent_room in recent_rooms:
-            other_user = recent_room.get_other_user(request.user)
+            other_user = recent_room.get_other_user(admin_user)
             if is_admin_user(other_user):
                 continue
             conversation_cards.append(
@@ -167,19 +254,7 @@ class MessageAdmin(ModelAdmin):
                     "is_selected": bool(selected_employee and selected_employee.id == other_user.id),
                 }
             )
-
-        context = {
-            **self.admin_site.each_context(request),
-            "opts": self.model._meta,
-            "title": "Admin chat with employees",
-            "employees": employees,
-            "selected_employee": selected_employee,
-            "chat_messages": chat_messages,
-            "conversation_cards": conversation_cards,
-            "form_token": self._issue_form_token(request),
-            "selected_employee_id": selected_employee.id if selected_employee else "",
-        }
-        return TemplateResponse(request, "live_chat.html", context)
+        return conversation_cards
 
     def _issue_form_token(self, request):
         tokens = request.session.get("admin_chat_form_tokens", [])

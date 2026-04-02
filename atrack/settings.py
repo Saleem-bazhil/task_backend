@@ -114,7 +114,7 @@ CORS_ALLOWED_ORIGINS = [
     origin
     for origin in os.getenv(
         "CORS_ALLOWED_ORIGINS",
-        "http://localhost:5173,http://127.0.0.1:5173,https://task-frontend-eight-brown.vercel.app,https://chatapi.bazhilgroups.in,https://api.teqtus.in",
+        "http://localhost:5173,http://127.0.0.1:5173,https://task-frontend-eight-brown.vercel.app,https://task.teqtus.in,https://chatapi.bazhilgroups.in,https://api.teqtus.in",
     ).split(",")
     if origin
 ]
@@ -123,7 +123,7 @@ CSRF_TRUSTED_ORIGINS = [
     origin
     for origin in os.getenv(
         "CSRF_TRUSTED_ORIGINS",
-        "https://chatapi.bazhilgroups.in,https://api.teqtus.in,http://localhost:8000,http://127.0.0.1:8000",
+        "https://task.teqtus.in,https://chatapi.bazhilgroups.in,https://api.teqtus.in,http://localhost:8000,http://127.0.0.1:8000",
     ).split(",")
     if origin
 ]
