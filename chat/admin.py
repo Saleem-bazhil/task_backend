@@ -127,14 +127,39 @@ class MessageAdmin(ModelAdmin):
             content = (request.POST.get("message") or "").strip()
             form_token = request.POST.get("form_token") or ""
             if not selected_employee:
+                if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                    return JsonResponse({"detail": "Select an employee before sending a message."}, status=400)
                 messages.error(request, "Select an employee before sending a message.")
             elif not content:
+                if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                    return JsonResponse({"detail": "Enter a message before sending."}, status=400)
                 messages.error(request, "Enter a message before sending.")
             elif not self._consume_form_token(request, form_token):
+                if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                    return JsonResponse(
+                        {"detail": "That message form was already used. Refresh prevented a duplicate send."},
+                        status=409,
+                    )
                 messages.info(request, "That message form was already used. Refresh prevented a duplicate send.")
                 return HttpResponseRedirect(f"{request.path}?employee={selected_employee.id}")
             else:
-                create_message(room, request.user, content)
+                message = create_message(room, request.user, content)
+                if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                    return JsonResponse(
+                        {
+                            "detail": f"Message sent to {selected_employee.username}.",
+                            "message": {
+                                "id": message.id,
+                                "content": message.content,
+                                "timestamp": message.timestamp.isoformat(),
+                                "timestamp_label": date_format(message.timestamp, "M j, Y, P"),
+                                "sender_id": message.sender_id,
+                                "sender_name": message.sender.username,
+                                "is_me": message.sender_id == request.user.id,
+                            },
+                            "form_token": self._issue_form_token(request),
+                        }
+                    )
                 messages.success(request, f"Message sent to {selected_employee.username}.")
                 return HttpResponseRedirect(f"{request.path}?employee={selected_employee.id}")
 
