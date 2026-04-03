@@ -11,7 +11,7 @@ from unfold.admin import ModelAdmin
 
 from .models import ChatRoom, Message
 from .permissions import can_chat_with, is_admin_user
-from .services import create_message, get_or_create_room_for_users
+from .services import create_message, get_or_create_room_for_users, notify_room_message
 
 User = get_user_model()
 
@@ -144,6 +144,7 @@ class MessageAdmin(ModelAdmin):
                 return HttpResponseRedirect(f"{request.path}?employee={selected_employee.id}")
             else:
                 message = create_message(room, request.user, content)
+                notify_room_message(message)
                 if request.headers.get("x-requested-with") == "XMLHttpRequest":
                     return JsonResponse(
                         {
