@@ -5,7 +5,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 
 from .models import ChatRoom
 from .serializers import MessageSerializer
-from .services import create_message
+from .services import create_message, notify_room_message
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -42,14 +42,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.send_error("Message content is required.")
             return
 
-        message_data = await self.persist_message(content)
-        await self.channel_layer.group_send(
-            self.group_name,
-            {
-                "type": "chat.message",
-                "message": message_data,
-            },
-        )
+        await self.persist_message(content)
 
     async def chat_message(self, event):
         await self.send(text_data=json.dumps(event["message"]))
@@ -76,4 +69,5 @@ class ChatConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def persist_message(self, content):
         message = create_message(self.room, self.user, content)
+        notify_room_message(message)
         return MessageSerializer(message).data
