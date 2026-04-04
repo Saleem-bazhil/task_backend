@@ -889,8 +889,12 @@
     const formTokenInput = document.getElementById("chat-form-token");
     const feedUrl = thread ? thread.dataset.feedUrl : "";
     const selectedEmployeeId = thread ? thread.dataset.selectedEmployee : "";
+    const selectedRoomId = thread ? thread.dataset.roomId : "";
+    const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = selectedRoomId ? wsProtocol + "//" + window.location.host + "/ws/chat/" + encodeURIComponent(selectedRoomId) + "/" : "";
     let refreshTimer = null;
     let isRefreshing = false;
+    let socket = null;
 
     function scrollThreadToBottom(behavior) {
         if (!thread) {
@@ -1120,6 +1124,38 @@
         setLiveState("offline", "Live updates paused");
     }
 
+    function connectWebSocket() {
+        if (!wsUrl || socket) {
+            return;
+        }
+
+        socket = new WebSocket(wsUrl);
+
+        socket.addEventListener("open", function () {
+            stopAutoRefresh();
+            setLiveState("live", "WebSocket live");
+            updateLastSync("Listening for new messages...");
+        });
+
+        socket.addEventListener("message", function () {
+            fetchConversation(false);
+        });
+
+        socket.addEventListener("error", function () {
+            setLiveState("offline", "WebSocket issue");
+            updateLastSync("Live socket error. Switching to refresh mode.");
+        });
+
+        socket.addEventListener("close", function () {
+            socket = null;
+            if (autoRefreshInput && autoRefreshInput.checked) {
+                startAutoRefresh();
+            } else {
+                setLiveState("offline", "Live updates paused");
+            }
+        });
+    }
+
     document.querySelectorAll("[data-chat-loading-link]").forEach(function (link) {
         link.addEventListener("click", function () {
             showLoading("Opening conversation...");
@@ -1215,7 +1251,10 @@
     }
 
     if (selectedEmployeeId) {
-        startAutoRefresh();
+        connectWebSocket();
+        if (!socket) {
+            startAutoRefresh();
+        }
         fetchConversation(false);
         scrollThreadToBottom("auto");
     }

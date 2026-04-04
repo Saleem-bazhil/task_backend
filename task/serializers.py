@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from .models import Task
+from .models import Task, Notification
 
 
 class TaskUserSerializer(serializers.ModelSerializer):
@@ -61,3 +61,9 @@ class TaskSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"user_id": "Employees cannot reassign tasks."})
 
         return attrs
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ["id", "title", "action", "project", "is_read", "status", "created_at"]

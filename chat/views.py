@@ -17,12 +17,14 @@ from .serializers import (
 from .services import get_or_create_room_for_users, get_visible_users_for
 
 
-class UserListView(generics.ListAPIView):
+class UserListView(APIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = ChatUserSerializer
 
-    def get_queryset(self):
-        return get_visible_users_for(self.request.user)
+    def get(self, request, *args, **kwargs):
+        include_self = str(request.query_params.get("include_self", "")).lower() in ["1", "true", "yes"]
+        users = get_visible_users_for(request.user, include_self=include_self)
+        serializer = ChatUserSerializer(users, many=True)
+        return Response(serializer.data)
 
 
 class ConversationListView(generics.ListAPIView):
