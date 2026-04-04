@@ -13,6 +13,4 @@ def can_chat_with(source_user, target_user):
         return False
     if source_user.id == target_user.id:
         return False
-    source_is_admin = is_admin_user(source_user)
-    target_is_admin = is_admin_user(target_user)
-    return not (source_is_admin and target_is_admin)
+    return True

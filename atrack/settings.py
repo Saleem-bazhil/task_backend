@@ -13,7 +13,11 @@ DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() == "true"
 
 ALLOWED_HOSTS = os.getenv(
     "DJANGO_ALLOWED_HOSTS",
+<<<<<<< HEAD
     "127.0.0.1,localhost,chatapi.bazhilgroups.in,api.teqtus.in,task.teqtus.in,taskadmin.teqtus.in",
+=======
+    "127.0.0.1,localhost,chatapi.bazhilgroups.in,api.teqtus.in,task-admin-seven.vercel.app",
+>>>>>>> 0359b5d8ea96afbde4f9e89cf5601dfb6664e1cc
 ).split(",")
 
 INSTALLED_APPS = [
@@ -114,7 +118,11 @@ CORS_ALLOWED_ORIGINS = [
     origin
     for origin in os.getenv(
         "CORS_ALLOWED_ORIGINS",
+<<<<<<< HEAD
         "http://localhost:5173,http://127.0.0.1:5173,https://task-frontend-eight-brown.vercel.app,https://task.teqtus.in,https://chatapi.bazhilgroups.in,https://api.teqtus.in,https://taskadmin.teqtus.in",
+=======
+        "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001,http://localhost:5173,http://127.0.0.1:5173,https://task-frontend-eight-brown.vercel.app,https://task.teqtus.in,https://chatapi.bazhilgroups.in,https://api.teqtus.in,https://task-admin-seven.vercel.app",
+>>>>>>> 0359b5d8ea96afbde4f9e89cf5601dfb6664e1cc
     ).split(",")
     if origin
 ]
@@ -123,7 +131,11 @@ CSRF_TRUSTED_ORIGINS = [
     origin
     for origin in os.getenv(
         "CSRF_TRUSTED_ORIGINS",
+<<<<<<< HEAD
         "https://task.teqtus.in,https://chatapi.bazhilgroups.in,https://api.teqtus.in,http://localhost:8000,http://127.0.0.1:8000,https://taskadmin.teqtus.in",
+=======
+        "https://task.teqtus.in,https://chatapi.bazhilgroups.in,https://api.teqtus.in,http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001,http://localhost:8000,http://127.0.0.1:8000,https://task-admin-seven.vercel.app",
+>>>>>>> 0359b5d8ea96afbde4f9e89cf5601dfb6664e1cc
     ).split(",")
     if origin
 ]
