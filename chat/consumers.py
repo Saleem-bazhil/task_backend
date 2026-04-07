@@ -71,3 +71,49 @@ class ChatConsumer(AsyncWebsocketConsumer):
         message = create_message(self.room, self.user, content)
         notify_room_message(message)
         return MessageSerializer(message).data
+
+
+class NotificationConsumer(AsyncWebsocketConsumer):
+    """
+    WebSocket consumer for real-time task notifications.
+    Connects user to their personal notification channel.
+    """
+
+    async def connect(self):
+        self.user = self.scope.get("user")
+
+        if not self.user or not self.user.is_authenticated:
+            await self.close(code=4001)
+            return
+
+        # Create a unique group for this user's notifications
+        self.notification_group_name = f"notification_{self.user.id}"
+        
+        await self.channel_layer.group_add(
+            self.notification_group_name,
+            self.channel_name
+        )
+        await self.accept()
+
+    async def disconnect(self, close_code):
+        if hasattr(self, "notification_group_name"):
+            await self.channel_layer.group_discard(
+                self.notification_group_name,
+                self.channel_name
+            )
+
+    # Receive notification from group and send to WebSocket
+    async def notification_message(self, event):
+        """
+        Handle notification event from group and send to WebSocket.
+        Called when a notification is broadcast to this group.
+        """
+        notification = event["notification"]
+        
+        await self.send(text_data=json.dumps({
+            "type": "notification",
+            "data": notification
+        }))
+
+    async def send_error(self, detail):
+        await self.send(text_data=json.dumps({"type": "error", "detail": detail}))
