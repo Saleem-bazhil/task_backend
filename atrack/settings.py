@@ -70,9 +70,21 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels.layers.InMemoryChannelLayer",
     },
 }
+# DATABASES = {
+#     "default": dj_database_url.parse(os.getenv("DATABASE_URL"))
+# }
+
 DATABASES = {
-    "default": dj_database_url.parse(os.getenv("DATABASE_URL"))
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'renderways',
+        'USER': 'postgres',
+        'PASSWORD': '1234',
+        'HOST': 'localhost',
+        'PORT': '5433',   
+    }
 }
+
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -114,7 +126,7 @@ CORS_ALLOWED_ORIGINS = [
     origin
     for origin in os.getenv(
         "CORS_ALLOWED_ORIGINS",
-        "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001,http://localhost:5173,http://127.0.0.1:5173,https://task-frontend-eight-brown.vercel.app,https://task.teqtus.in,https://chatapi.bazhilgroups.in,https://api.teqtus.in,https://task-admin-seven.vercel.app",
+        "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001,http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,https://task-frontend-eight-brown.vercel.app,https://task.teqtus.in,https://chatapi.bazhilgroups.in,https://api.teqtus.in,https://task-admin-seven.vercel.app",
     ).split(",")
     if origin
 ]
@@ -123,7 +135,7 @@ CSRF_TRUSTED_ORIGINS = [
     origin
     for origin in os.getenv(
         "CSRF_TRUSTED_ORIGINS",
-        "https://task.teqtus.in,https://chatapi.bazhilgroups.in,https://api.teqtus.in,http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001,http://localhost:8000,http://127.0.0.1:8000,https://task-admin-seven.vercel.app",
+        "https://task.teqtus.in,https://chatapi.bazhilgroups.in,https://api.teqtus.in,http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001,http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:8000,http://127.0.0.1:8000,https://task-admin-seven.vercel.app",
     ).split(",")
     if origin
 ]
@@ -187,3 +199,6 @@ CSRF_COOKIE_DOMAIN = os.getenv("CSRF_COOKIE_DOMAIN") or None
 
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = False
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
