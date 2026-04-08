@@ -9,7 +9,7 @@ UserModel = get_user_model()
 
 
 def ensure_user_profile(user):
-    default_role = UserProfile.ADMIN if user.is_staff or user.is_superuser else UserProfile.EMPLOYEE
+    default_role = UserProfile.ADMIN if user.is_staff or user.is_superuser else UserProfile.CONTRIBUTOR
     profile, created = UserProfile.objects.get_or_create(
         user=user,
         defaults={"role": default_role},
@@ -38,7 +38,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     role = serializers.ChoiceField(
         choices=UserProfile.ROLE_CHOICES,
         required=False,
-        default=UserProfile.EMPLOYEE,
+        default=UserProfile.CONTRIBUTOR,
     )
 
     class Meta:
@@ -52,7 +52,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        role = validated_data.pop("role", UserProfile.EMPLOYEE)
+        role = validated_data.pop("role", UserProfile.CONTRIBUTOR)
         password = validated_data.pop("password")
         user = User.objects.create_user(password=password, **validated_data)
         profile = ensure_user_profile(user)
