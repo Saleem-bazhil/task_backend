@@ -25,11 +25,7 @@ DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() == "true"
 
 ALLOWED_HOSTS = os.getenv(
     "DJANGO_ALLOWED_HOSTS",
-<<<<<<< HEAD
     "127.0.0.1,localhost,chatapi.bazhilgroups.in,api.teqtus.in,task.teqtus.in,task-admin-seven.vercel.app,taskadmin.teqtus.in",
-=======
-    "127.0.0.1,localhost,chatapi.bazhilgroups.in,api.teqtus.in",
->>>>>>> d7c89435517a202419c7a9d6383514d38e7effbe
 ).split(",")
 
 INSTALLED_APPS = [
