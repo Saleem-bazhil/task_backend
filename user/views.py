@@ -2,12 +2,18 @@ from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.models import User
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from .serializers import AuthUserSerializer, LoginSerializer, RegisterSerializer, UpdateProfileSerializer
 from .models import UserProfile
+
+
+class AuthRateThrottle(AnonRateThrottle):
+    """Stricter throttle for authentication endpoints."""
+    rate = "5/minute"
 
 
 def build_auth_response(user):
@@ -22,6 +28,7 @@ def build_auth_response(user):
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [AuthRateThrottle]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -32,6 +39,7 @@ class RegisterView(generics.CreateAPIView):
 
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [AuthRateThrottle]
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)

@@ -11,5 +11,7 @@ urlpatterns = [
     path("api/", include("chat.urls")),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Always serve media files. In production with S3, Django's storage
+# backend returns absolute S3 URLs so these patterns won't match;
+# this line only matters for local dev / non-S3 deployments.
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

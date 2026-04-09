@@ -41,11 +41,14 @@ class TaskAttachmentSerializer(serializers.ModelSerializer):
     def get_file_url(self, obj):
         request = self.context.get('request')
         if obj.file:
-            # Always build absolute URL so frontend opens the backend server URL directly
+            # S3 storage returns absolute URLs already; just return them
+            url = obj.file.url
+            if url.startswith("http"):
+                return url
+            # Local storage: build absolute URL from request
             if request:
-                return request.build_absolute_uri(obj.file.url)
-            # Fallback: prepend backend URL manually
-            return f"http://127.0.0.1:8000{obj.file.url}"
+                return request.build_absolute_uri(url)
+            return url
         return None
 
 
