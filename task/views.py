@@ -1,14 +1,17 @@
+import os
+
 from django.contrib.admin.models import CHANGE, LogEntry
 from django.contrib.contenttypes.models import ContentType
 from datetime import timedelta
 from django.utils import timezone
 from django.contrib.auth.models import User
 from rest_framework import generics, permissions, status
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
+from django.db import transaction
 from django.db.models import Q
 
 from .models import Task, Notification, TaskComment, TaskAttachment, TaskHistory
@@ -156,29 +159,26 @@ class Taskview(ModelViewSet):
             queryset = queryset.filter(status=status_param)
         return queryset
 
+    @transaction.atomic
     def perform_create(self, serializer):
-        # Anyone can create a task now as requested (everyone can recieve/send)
         task = serializer.save(user=self.request.user)
-        
-        # Set assigned_by if there are assignees and they're different from the creator
+
         if task.assigned_to.exists():
-            # If the creator is not among the assignees, they assigned it to others
             if not task.assigned_to.filter(id=self.request.user.id).exists():
                 task.assigned_by = self.request.user
                 task.save()
-        
-        # Record creation in history
+
         TaskHistory.objects.create(
             task=task,
             user=self.request.user,
             action='created',
             description=f'Task "{task.title}" was created.'
         )
-        
-        # Notify all assigned users
+
         for assigned_user in task.assigned_to.all():
             notify_task_assigned(task, assigned_user, self.request.user)
 
+    @transaction.atomic
     def perform_update(self, serializer):
         instance = self.get_object()
         old_status = instance.status
@@ -367,13 +367,26 @@ class TaskAttachmentViewSet(ModelViewSet):
     serializer_class = TaskAttachmentSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    # 10 MB max upload size
+    MAX_UPLOAD_SIZE = 10 * 1024 * 1024
+
+    ALLOWED_EXTENSIONS = {
+        # Documents
+        '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+        '.txt', '.csv', '.rtf', '.odt', '.ods',
+        # Images
+        '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg',
+        # Archives
+        '.zip', '.rar', '.7z', '.tar', '.gz',
+    }
+
     def get_queryset(self):
         """
         In collaborative system, users can see attachments on tasks they're involved with.
         """
         if is_admin_user(self.request.user):
             return TaskAttachment.objects.all()
-        
+
         visible_tasks = get_task_queryset_for(self.request.user)
         return TaskAttachment.objects.filter(task__in=visible_tasks)
 
@@ -383,18 +396,31 @@ class TaskAttachmentViewSet(ModelViewSet):
             task = Task.objects.get(id=task_id)
         except Task.DoesNotExist:
             raise PermissionDenied("Task not found.")
-            
+
         # In collaborative system, anyone involved with the task can upload files
         if not is_admin_user(self.request.user):
             is_creator = task.user == self.request.user
             is_assigned = self.request.user in task.assigned_to.all()
             if not (is_creator or is_assigned):
                 raise PermissionDenied("You can only attach files to tasks you're involved with.")
-        
+
         file_obj = self.request.FILES.get('file')
         if not file_obj:
             raise PermissionDenied("No file uploaded.")
-            
+
+        # Validate file size
+        if file_obj.size > self.MAX_UPLOAD_SIZE:
+            raise ValidationError(
+                f"File too large. Maximum size is {self.MAX_UPLOAD_SIZE // (1024 * 1024)} MB."
+            )
+
+        # Validate file extension
+        _, ext = os.path.splitext(file_obj.name)
+        if ext.lower() not in self.ALLOWED_EXTENSIONS:
+            raise ValidationError(
+                f"File type '{ext}' is not allowed. Allowed types: {', '.join(sorted(self.ALLOWED_EXTENSIONS))}"
+            )
+
         serializer.save(user=self.request.user, filename=file_obj.name)
 
 
