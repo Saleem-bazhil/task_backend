@@ -1,0 +1,1264 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<style>
+    :root {
+        --chat-page-bg: var(--body-bg, #f8fafc);
+        --chat-bg: linear-gradient(180deg, color-mix(in srgb, var(--chat-page-bg) 96%, var(--primary, #9333ea) 4%) 0%, color-mix(in srgb, var(--chat-page-bg) 90%, black 10%) 100%);
+        --chat-surface: color-mix(in srgb, var(--body-bg, #ffffff) 92%, var(--body-fg, #0f172a) 8%);
+        --chat-surface-strong: var(--body-bg, #ffffff);
+        --chat-border: color-mix(in srgb, var(--border-color, #d7dce4) 88%, transparent 12%);
+        --chat-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+        --chat-text: var(--body-fg, #0f172a);
+        --chat-muted: color-mix(in srgb, var(--body-fg, #0f172a) 58%, transparent 42%);
+        --chat-accent: var(--primary, #9333ea);
+        --chat-accent-dark: color-mix(in srgb, var(--primary, #9333ea) 76%, black 24%);
+        --chat-accent-soft: color-mix(in srgb, var(--primary, #9333ea) 12%, transparent 88%);
+        --chat-warm: color-mix(in srgb, var(--primary, #9333ea) 42%, #f59e0b 58%);
+        --chat-thread: linear-gradient(180deg, color-mix(in srgb, var(--body-bg, #ffffff) 96%, var(--primary, #9333ea) 4%) 0%, color-mix(in srgb, var(--body-bg, #ffffff) 90%, var(--primary, #9333ea) 10%) 100%);
+        --chat-me: linear-gradient(135deg, color-mix(in srgb, var(--primary, #9333ea) 82%, black 18%) 0%, var(--primary, #9333ea) 100%);
+        --chat-them: color-mix(in srgb, var(--body-bg, #ffffff) 96%, var(--body-fg, #0f172a) 4%);
+    }
+
+    .chat-page {
+        position: relative;
+        margin-top: 12px;
+        width: 100%;
+        max-width: 100%;
+        color: var(--chat-text);
+    }
+
+    .chat-loading {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(15, 23, 42, 0.32);
+        backdrop-filter: blur(6px);
+    }
+
+    .chat-loading.is-visible {
+        display: flex;
+    }
+
+    .chat-loading-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        min-width: 220px;
+        padding: 22px 24px;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        border-radius: 24px;
+        background: rgba(25, 33, 47, 0.88);
+        color: #fff;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+    }
+
+    .chat-loading-spinner {
+        width: 38px;
+        height: 38px;
+        border: 3px solid rgba(255, 255, 255, 0.22);
+        border-top-color: #fff;
+        border-radius: 999px;
+        animation: chat-spin 0.85s linear infinite;
+    }
+
+    .chat-loading-text {
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+    }
+
+    .chat-hero {
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 20px;
+        padding: 24px 28px;
+        border: 1px solid var(--chat-border);
+        border-radius: 28px;
+        background:
+            radial-gradient(circle at top right, rgba(198, 123, 69, 0.18), transparent 28%),
+            radial-gradient(circle at left center, rgba(31, 111, 95, 0.12), transparent 30%),
+            var(--chat-bg);
+        box-shadow: var(--chat-shadow);
+    }
+
+    .chat-hero::after {
+        content: "";
+        position: absolute;
+        inset: auto -40px -60px auto;
+        width: 180px;
+        height: 180px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.26);
+        filter: blur(4px);
+    }
+
+    .chat-hero-title {
+        position: relative;
+        margin: 0;
+        font-size: 2rem;
+        line-height: 1.1;
+        letter-spacing: -0.03em;
+    }
+
+    .chat-hero-copy {
+        position: relative;
+        margin: 10px 0 0;
+        max-width: 720px;
+        color: var(--chat-muted);
+        font-size: 15px;
+    }
+
+    .chat-hero-meta {
+        position: relative;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 18px;
+    }
+
+    .chat-hero-stat {
+        min-width: 130px;
+        padding: 12px 14px;
+        border: 1px solid rgba(116, 87, 44, 0.08);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.56);
+        backdrop-filter: blur(8px);
+    }
+
+    .chat-hero-stat strong {
+        display: block;
+        font-size: 1.2rem;
+    }
+
+    .chat-hero-stat span {
+        color: var(--chat-muted);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .chat-shell {
+        display: grid;
+        grid-template-columns: minmax(280px, 300px) minmax(0, 1fr);
+        gap: 14px;
+        min-height: calc(100vh - 165px);
+        max-height: calc(100vh - 130px);
+        align-items: stretch;
+    }
+
+    .chat-shell * {
+        box-sizing: border-box;
+    }
+
+    .chat-card {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+        border: 1px solid var(--chat-border);
+        border-radius: 24px;
+        background: var(--chat-surface);
+        box-shadow: var(--chat-shadow);
+        backdrop-filter: blur(8px);
+    }
+
+    .chat-card-header {
+        padding: 18px 20px 14px;
+        border-bottom: 1px solid rgba(116, 87, 44, 0.08);
+        background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.54));
+    }
+
+    .chat-card-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+        padding: 5px 9px;
+        border-radius: 999px;
+        background: var(--chat-accent-soft);
+        color: var(--chat-accent-dark);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .chat-card-header h2,
+    .chat-card-header h3 {
+        margin: 0;
+        font-size: 1.05rem;
+        line-height: 1.2;
+        letter-spacing: -0.02em;
+    }
+
+    .chat-card-header p {
+        margin: 6px 0 0;
+        color: var(--chat-muted);
+        font-size: 12px;
+    }
+
+    .chat-card-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 12px;
+    }
+
+    .chat-live-group {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .chat-live-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.82);
+        color: var(--chat-text);
+        box-shadow: inset 0 0 0 1px rgba(116, 87, 44, 0.10);
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .chat-live-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+        background: #f59e0b;
+        box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.14);
+        transition: background 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .chat-live-pill.is-live .chat-live-dot {
+        background: #16a34a;
+        box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.14);
+    }
+
+    .chat-live-pill.is-offline .chat-live-dot {
+        background: #dc2626;
+        box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.14);
+    }
+
+    .chat-sidebar-section {
+        padding: 18px 20px;
+        border-bottom: 1px solid rgba(116, 87, 44, 0.08);
+    }
+
+    .chat-sidebar-scroll {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        max-height: calc(100vh - 255px);
+        padding: 16px 16px 18px 20px;
+    }
+
+    .chat-label {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--chat-muted);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .chat-select,
+    .chat-textarea {
+        width: 100%;
+        border: 1px solid rgba(116, 87, 44, 0.16);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.88);
+        color: var(--chat-text);
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .chat-select {
+        padding: 13px 14px;
+        font-size: 14px;
+    }
+
+    .chat-textarea {
+        min-height: 110px;
+        padding: 16px 18px;
+        resize: vertical;
+        font-family: inherit;
+        font-size: 14px;
+        line-height: 1.55;
+    }
+
+    .chat-select:focus,
+    .chat-textarea:focus {
+        outline: none;
+        border-color: rgba(31, 111, 95, 0.45);
+        box-shadow: 0 0 0 4px rgba(31, 111, 95, 0.12);
+        transform: translateY(-1px);
+    }
+
+    .chat-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 12px;
+    }
+
+    .chat-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 10px 16px;
+        border: none;
+        border-radius: 999px;
+        background: linear-gradient(135deg, var(--chat-accent) 0%, #2b8973 100%);
+        color: #fff;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.10);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+
+    .chat-button[disabled] {
+        cursor: wait;
+        opacity: 0.82;
+        transform: none;
+        filter: none;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+    }
+
+    .chat-button:hover {
+        transform: translateY(-1px);
+        filter: saturate(1.05);
+        box-shadow: 0 6px 14px rgba(15, 23, 42, 0.12);
+    }
+
+    .chat-button-secondary {
+        background: rgba(255, 255, 255, 0.88);
+        color: var(--chat-text);
+        box-shadow: inset 0 0 0 1px rgba(116, 87, 44, 0.12);
+    }
+
+    .chat-button-ghost {
+        background: rgba(255, 255, 255, 0.88);
+        color: var(--chat-text);
+        box-shadow: inset 0 0 0 1px rgba(116, 87, 44, 0.12);
+    }
+
+    .conversation-list {
+        display: grid;
+        gap: 8px;
+    }
+
+    .conversation-link {
+        display: block;
+        padding: 12px 13px;
+        border: 1px solid transparent;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.58);
+        color: var(--chat-text);
+        text-decoration: none;
+        transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .conversation-link:hover {
+        transform: translateY(-1px);
+        background: rgba(255, 255, 255, 0.92);
+        border-color: rgba(31, 111, 95, 0.12);
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+    }
+
+    .conversation-link.is-selected {
+        border-color: rgba(31, 111, 95, 0.22);
+        background: linear-gradient(135deg, rgba(31, 111, 95, 0.13), rgba(255, 255, 255, 0.96));
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    }
+
+    .conversation-name {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 3px;
+    }
+
+    .conversation-name strong {
+        font-size: 13px;
+    }
+
+    .conversation-tag {
+        flex-shrink: 0;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: rgba(198, 123, 69, 0.14);
+        color: #9a5f31;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .conversation-preview {
+        color: var(--chat-muted);
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .conversation-preview.is-empty {
+        font-style: italic;
+    }
+
+    .conversation-link.is-fresh {
+        border-color: rgba(198, 123, 69, 0.24);
+        background: linear-gradient(135deg, rgba(198, 123, 69, 0.10), rgba(255, 255, 255, 0.96));
+    }
+
+    .chat-thread {
+        position: relative;
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        max-height: calc(100vh - 255px);
+        padding: 14px 16px 16px;
+        scroll-behavior: smooth;
+        background:
+            radial-gradient(circle at top left, color-mix(in srgb, var(--primary, #9333ea) 12%, transparent 88%), transparent 24%),
+            radial-gradient(circle at right center, color-mix(in srgb, var(--primary, #9333ea) 8%, transparent 92%), transparent 26%),
+            var(--chat-thread);
+    }
+
+    .chat-thread::before {
+        content: "";
+        position: sticky;
+        top: 0;
+        display: block;
+        height: 10px;
+        margin: -14px -16px 6px;
+        background: linear-gradient(180deg, rgba(248, 244, 238, 0.95), rgba(248, 244, 238, 0));
+        pointer-events: none;
+    }
+
+    .chat-thread-topbar {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 8px;
+        margin: -14px -16px 12px;
+        padding: 10px 16px 10px;
+        background: linear-gradient(180deg, rgba(248, 244, 238, 0.96), rgba(248, 244, 238, 0.82), rgba(248, 244, 238, 0));
+    }
+
+    .chat-thread-topbar strong {
+        display: block;
+        margin-bottom: 2px;
+        font-size: 13px;
+    }
+
+    .chat-thread-topbar span {
+        color: var(--chat-muted);
+        font-size: 11px;
+    }
+
+    .chat-empty {
+        display: grid;
+        place-items: center;
+        min-height: 100%;
+        padding: 36px;
+        text-align: center;
+        color: var(--chat-muted);
+    }
+
+    .chat-empty-panel {
+        max-width: 380px;
+        padding: 28px 24px;
+        border: 1px dashed rgba(116, 87, 44, 0.18);
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.46);
+    }
+
+    .chat-empty-panel strong {
+        display: block;
+        margin-bottom: 10px;
+        color: var(--chat-text);
+        font-size: 1.05rem;
+    }
+
+    .message-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .msg-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        max-width: min(72%, 620px);
+    }
+
+    .msg-wrapper.me {
+        margin-left: auto;
+        align-items: flex-end;
+    }
+
+    .msg-wrapper.them {
+        margin-right: auto;
+        align-items: flex-start;
+    }
+
+    .msg-meta {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0 2px;
+        color: var(--chat-muted);
+        font-size: 11px;
+    }
+
+    .msg-author {
+        font-weight: 700;
+        color: var(--chat-text);
+    }
+
+    .msg-time {
+        opacity: 0.85;
+    }
+
+    .msg-bubble {
+        padding: 10px 12px;
+        border-radius: 16px;
+        line-height: 1.45;
+        font-size: 13px;
+        word-break: break-word;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+    }
+
+    .msg-wrapper.me .msg-bubble {
+        color: #fff;
+        background: var(--chat-me);
+        border-bottom-right-radius: 8px;
+    }
+
+    .msg-wrapper.them .msg-bubble {
+        color: var(--chat-text);
+        background: var(--chat-them);
+        border: 1px solid rgba(116, 87, 44, 0.10);
+        border-bottom-left-radius: 8px;
+    }
+
+    .chat-composer {
+        padding: 14px 16px 16px;
+        border-top: 1px solid rgba(116, 87, 44, 0.08);
+        background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 253, 249, 0.98));
+    }
+
+    .chat-composer-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .chat-hint {
+        color: var(--chat-muted);
+        font-size: 11px;
+        line-height: 1.4;
+    }
+
+    .chat-summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-top: 14px;
+        padding: 12px 14px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.64);
+        color: var(--chat-muted);
+        font-size: 13px;
+    }
+
+    .chat-summary strong {
+        color: var(--chat-text);
+    }
+
+    .chat-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--chat-muted);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        cursor: pointer;
+    }
+
+    .chat-toggle input {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--chat-accent);
+    }
+
+    @supports not (color: color-mix(in srgb, white 50%, black 50%)) {
+        :root {
+            --chat-page-bg: #f8fafc;
+            --chat-bg: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+            --chat-surface: rgba(255, 255, 255, 0.94);
+            --chat-surface-strong: #ffffff;
+            --chat-border: rgba(148, 163, 184, 0.20);
+            --chat-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+            --chat-text: #0f172a;
+            --chat-muted: #64748b;
+            --chat-accent: #7c3aed;
+            --chat-accent-dark: #6d28d9;
+            --chat-accent-soft: rgba(124, 58, 237, 0.12);
+            --chat-warm: #f59e0b;
+            --chat-thread: linear-gradient(180deg, #ffffff 0%, #f5f3ff 100%);
+            --chat-me: linear-gradient(135deg, #6d28d9 0%, #8b5cf6 100%);
+            --chat-them: #ffffff;
+        }
+    }
+
+    @media (max-width: 1100px) {
+        .chat-shell {
+            grid-template-columns: 1fr;
+            min-height: 0;
+            max-height: none;
+        }
+
+        .chat-card {
+            min-height: 0;
+        }
+
+        .msg-wrapper {
+            max-width: 92%;
+        }
+
+        .chat-sidebar-scroll,
+        .chat-thread {
+            max-height: none;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .chat-hero {
+            padding: 20px;
+            border-radius: 22px;
+        }
+
+        .chat-hero-title {
+            font-size: 1.65rem;
+        }
+
+        .chat-card,
+        .chat-thread,
+        .chat-composer,
+        .chat-sidebar-section,
+        .chat-sidebar-scroll,
+        .chat-card-header {
+            border-radius: 0;
+        }
+
+        .chat-card {
+            border-radius: 22px;
+        }
+
+        .chat-card-header,
+        .chat-thread,
+        .chat-composer,
+        .chat-sidebar-section,
+        .chat-sidebar-scroll {
+            padding-left: 16px;
+            padding-right: 16px;
+        }
+
+        .chat-composer-bar,
+        .chat-summary,
+        .chat-card-toolbar,
+        .chat-thread-topbar {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .chat-button {
+            width: 100%;
+        }
+    }
+
+    @keyframes chat-spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
+<div class="chat-page">
+    <div class="chat-loading" id="chat-loading" aria-hidden="true">
+        <div class="chat-loading-card">
+            <div class="chat-loading-spinner"></div>
+            <div class="chat-loading-text">Loading conversation...</div>
+        </div>
+    </div>
+
+    <div class="chat-shell">
+        <section class="chat-card">
+            <div class="chat-card-header">
+                <div class="chat-card-kicker">Conversations</div>
+                <h2>Employee chat</h2>
+                <p>Open an existing thread or start a new direct conversation.</p>
+            </div>
+
+            <div class="chat-sidebar-section">
+                <form method="get" data-chat-loading-form>
+                    <label for="employee" class="chat-label">Choose employee</label>
+                    <select id="employee" name="employee" class="chat-select">
+                        <option value="">Select an employee</option>
+                        {% for employee in employees %}
+                            <option value="{{ employee.id }}" {% if selected_employee and selected_employee.id == employee.id %}selected{% endif %}>
+                                {{ employee.username }}{% if employee.first_name or employee.last_name %} - {{ employee.first_name }} {{ employee.last_name }}{% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <div class="chat-actions">
+                        <button type="submit" class="chat-button">Open chat</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="chat-sidebar-scroll">
+                <span class="chat-label">Recent conversations</span>
+                <div class="conversation-list" id="conversation-list">
+                    {% for conversation in conversation_cards %}
+                        <a href="?employee={{ conversation.employee.id }}" class="conversation-link{% if conversation.is_selected %} is-selected{% endif %}" data-chat-loading-link data-employee-id="{{ conversation.employee.id }}">
+                            <div class="conversation-name">
+                                <strong>{{ conversation.employee.username }}</strong>
+                                {% if conversation.is_selected %}
+                                    <span class="conversation-tag">Open</span>
+                                {% endif %}
+                            </div>
+                            <div class="conversation-preview{% if not conversation.last_message %} is-empty{% endif %}" data-preview>
+                                {% if conversation.last_message %}
+                                    {{ conversation.last_message.content|truncatechars:55 }}
+                                {% else %}
+                                    No messages yet
+                                {% endif %}
+                            </div>
+                        </a>
+                    {% empty %}
+                        <span class="chat-hint">No employee conversations yet.</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+
+        <section class="chat-card">
+            <div class="chat-card-header">
+                <div class="chat-card-kicker">Active thread</div>
+                <h3>
+                    {% if selected_employee %}
+                        Conversation with {{ selected_employee.username }}
+                    {% else %}
+                        Select an employee to begin
+                    {% endif %}
+                </h3>
+                <p>
+                    {% if selected_employee %}
+                        Messages from this panel are sent from your admin account and appear in chronological order.
+                    {% else %}
+                        Choose an employee from the left to view messages and send a reply.
+                    {% endif %}
+                </p>
+                {% if selected_employee %}
+                    <div class="chat-card-toolbar">
+                        <div class="chat-live-group">
+                            <div class="chat-live-pill is-live" id="chat-live-status">
+                                <span class="chat-live-dot"></span>
+                                <span id="chat-live-status-label">Live updates on</span>
+                            </div>
+                            <div class="chat-live-pill">
+                                <span>Room</span>
+                                <strong id="chat-room-label">{{ selected_room_id }}</strong>
+                            </div>
+                        </div>
+                        <div class="chat-live-group">
+                            <label class="chat-toggle" for="chat-auto-refresh">
+                                <input id="chat-auto-refresh" type="checkbox" checked>
+                                Auto refresh
+                            </label>
+                            <button type="button" class="chat-button chat-button-ghost" id="chat-refresh-button">Refresh now</button>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="chat-thread" id="chat-thread" data-feed-url="{{ live_feed_url }}" data-selected-employee="{{ selected_employee_id }}" data-room-id="{{ selected_room_id }}" data-current-user="{{ request.user.id }}">
+                {% if selected_employee %}
+                    <div class="chat-thread-topbar">
+                        <div style="min-width: 0;">
+                            <strong id="chat-thread-title">{{ selected_employee.username }}</strong>
+                            <span id="chat-thread-subtitle">Messages update automatically while this thread is open.</span>
+                        </div>
+                        <span id="chat-last-sync" style="white-space: nowrap; text-align: right;">Waiting for first sync...</span>
+                    </div>
+                    {% if chat_messages %}
+                        <div class="message-stack" id="message-stack">
+                            {% for message in chat_messages %}
+                                <div class="msg-wrapper {% if message.sender_id == request.user.id %}me{% else %}them{% endif %}" data-message-id="{{ message.id }}">
+                                    <div class="msg-meta">
+                                        <span class="msg-author">{{ message.sender.username }}</span>
+                                        <span class="msg-time">{{ message.timestamp|date:"M j, Y, g:i a" }}</span>
+                                    </div>
+                                    <div class="msg-bubble">{{ message.content|linebreaksbr }}</div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="chat-empty" id="chat-empty-state">
+                            <div class="chat-empty-panel">
+                                <strong>No messages yet</strong>
+                                Send the first message to start this conversation.
+                            </div>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="chat-empty">
+                        <div class="chat-empty-panel">
+                            <strong>No conversation selected</strong>
+                            Pick an employee from the left to open the thread and begin messaging.
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if selected_employee %}
+                <div class="chat-composer">
+                    <form method="post" data-chat-inline-form id="chat-message-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="employee" value="{{ selected_employee.id }}">
+                        <input type="hidden" name="form_token" value="{{ form_token }}" id="chat-form-token">
+                        <label for="message" class="chat-label">New message</label>
+                        <textarea id="message" name="message" class="chat-textarea" placeholder="Write a clear, helpful message to {{ selected_employee.username }}..." required></textarea>
+                        
+                        <div class="chat-composer-bar">
+                            <span class="chat-hint">Tip: keep messages short and action-oriented so employees can respond faster.</span>
+                            <button type="submit" class="chat-button">Send message</button>
+                        </div>
+                    </form>
+                </div>
+            {% endif %}
+        </section>
+    </div>
+</div>
+
+{% if selected_employee %}
+<script>
+(function () {
+    const thread = document.getElementById("chat-thread");
+    const loadingOverlay = document.getElementById("chat-loading");
+    const autoRefreshInput = document.getElementById("chat-auto-refresh");
+    const refreshButton = document.getElementById("chat-refresh-button");
+    const liveStatus = document.getElementById("chat-live-status");
+    const liveStatusLabel = document.getElementById("chat-live-status-label");
+    const lastSync = document.getElementById("chat-last-sync");
+    const messageCount = document.getElementById("chat-message-count");
+    const refreshState = document.getElementById("chat-refresh-state");
+    const roomLabel = document.getElementById("chat-room-label");
+    const conversationList = document.getElementById("conversation-list");
+    const threadTitle = document.getElementById("chat-thread-title");
+    const messageForm = document.getElementById("chat-message-form");
+    const messageInput = document.getElementById("message");
+    const formTokenInput = document.getElementById("chat-form-token");
+    const feedUrl = thread ? thread.dataset.feedUrl : "";
+    const selectedEmployeeId = thread ? thread.dataset.selectedEmployee : "";
+    const selectedRoomId = thread ? thread.dataset.roomId : "";
+    const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = selectedRoomId ? wsProtocol + "//" + window.location.host + "/ws/chat/" + encodeURIComponent(selectedRoomId) + "/" : "";
+    let refreshTimer = null;
+    let isRefreshing = false;
+    let socket = null;
+
+    function scrollThreadToBottom(behavior) {
+        if (!thread) {
+            return;
+        }
+
+        thread.scrollTo({
+            top: thread.scrollHeight,
+            behavior: behavior || "auto"
+        });
+    }
+
+    if (thread) {
+        scrollThreadToBottom("auto");
+    }
+
+    function showLoading(message) {
+        if (!loadingOverlay) {
+            return;
+        }
+
+        const text = loadingOverlay.querySelector(".chat-loading-text");
+        if (text && message) {
+            text.textContent = message;
+        }
+
+        loadingOverlay.classList.add("is-visible");
+        loadingOverlay.setAttribute("aria-hidden", "false");
+    }
+
+    function escapeHtml(value) {
+        return String(value || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+
+    function formatMessageContent(value) {
+        return escapeHtml(value).replace(/\n/g, "<br>");
+    }
+
+    function setLiveState(mode, label) {
+        if (!liveStatus || !liveStatusLabel || !refreshState) {
+            return;
+        }
+
+        liveStatus.classList.remove("is-live", "is-offline");
+        if (mode === "live") {
+            liveStatus.classList.add("is-live");
+            refreshState.textContent = "Auto";
+        } else if (mode === "offline") {
+            liveStatus.classList.add("is-offline");
+            refreshState.textContent = "Paused";
+        } else {
+            refreshState.textContent = "Sync";
+        }
+
+        liveStatusLabel.textContent = label;
+    }
+
+    function updateLastSync(text) {
+        if (lastSync) {
+            lastSync.textContent = text;
+        }
+    }
+
+    function renderMessages(messages) {
+        if (!thread) {
+            return;
+        }
+
+        const previousHeight = thread.scrollHeight;
+        const isNearBottom = thread.scrollTop + thread.clientHeight >= previousHeight - 120;
+        let stack = document.getElementById("message-stack");
+        const emptyState = document.getElementById("chat-empty-state");
+
+        if (emptyState) {
+            emptyState.remove();
+        }
+
+        if (!stack) {
+            stack = document.createElement("div");
+            stack.className = "message-stack";
+            stack.id = "message-stack";
+            thread.appendChild(stack);
+        }
+
+        stack.innerHTML = messages.map(function (message) {
+            return [
+                '<div class="msg-wrapper ' + (message.is_me ? "me" : "them") + '" data-message-id="' + message.id + '">',
+                '  <div class="msg-meta">',
+                '    <span class="msg-author">' + escapeHtml(message.sender_name) + '</span>',
+                '    <span class="msg-time">' + escapeHtml(message.timestamp_label) + '</span>',
+                "  </div>",
+                '  <div class="msg-bubble">' + formatMessageContent(message.content) + "</div>",
+                "</div>"
+            ].join("");
+        }).join("");
+
+        if (messageCount) {
+            messageCount.textContent = messages.length;
+        }
+
+        if (isNearBottom) {
+            scrollThreadToBottom("smooth");
+        }
+    }
+
+    function setComposerState(isSending) {
+        if (!messageForm) {
+            return;
+        }
+
+        const submitButton = messageForm.querySelector('button[type="submit"]');
+        if (submitButton) {
+            submitButton.disabled = isSending;
+            submitButton.textContent = isSending ? "Sending..." : "Send message";
+        }
+
+        if (messageInput) {
+            if (isSending) {
+                messageInput.setAttribute("aria-busy", "true");
+            } else {
+                messageInput.removeAttribute("aria-busy");
+            }
+        }
+    }
+
+    function updateConversationCards(cards) {
+        if (!conversationList) {
+            return;
+        }
+
+        cards.forEach(function (card) {
+            const link = conversationList.querySelector('[data-employee-id="' + card.employee_id + '"]');
+            if (!link) {
+                return;
+            }
+
+            link.classList.toggle("is-selected", !!card.is_selected);
+            link.classList.toggle("is-fresh", !!card.has_messages && !card.is_selected);
+
+            const preview = link.querySelector("[data-preview]");
+            if (preview) {
+                preview.textContent = card.has_messages ? card.preview : "No messages yet";
+                preview.classList.toggle("is-empty", !card.has_messages);
+            }
+
+            let tag = link.querySelector(".conversation-tag");
+            if (card.is_selected && !tag) {
+                tag = document.createElement("span");
+                tag.className = "conversation-tag";
+                tag.textContent = "Open";
+                const nameRow = link.querySelector(".conversation-name");
+                if (nameRow) {
+                    nameRow.appendChild(tag);
+                }
+            } else if (!card.is_selected && tag) {
+                tag.remove();
+            }
+        });
+    }
+
+    function fetchConversation(showBusy) {
+        if (!feedUrl || !selectedEmployeeId || isRefreshing) {
+            return;
+        }
+
+        isRefreshing = true;
+        if (showBusy) {
+            setLiveState("sync", "Refreshing conversation...");
+        }
+
+        fetch(feedUrl + "?employee=" + encodeURIComponent(selectedEmployeeId), {
+            credentials: "same-origin",
+            headers: {
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error("Unable to refresh chat.");
+                }
+                return response.json();
+            })
+            .then(function (payload) {
+                renderMessages(payload.messages || []);
+                updateConversationCards(payload.conversation_cards || []);
+                if (roomLabel && payload.room_id) {
+                    roomLabel.textContent = payload.room_id;
+                }
+                if (threadTitle && payload.selected_employee) {
+                    threadTitle.textContent = payload.selected_employee.username;
+                }
+                updateLastSync("Last synced just now");
+                setLiveState(
+                    autoRefreshInput && autoRefreshInput.checked ? "live" : "offline",
+                    autoRefreshInput && autoRefreshInput.checked ? "Live updates on" : "Live updates paused"
+                );
+            })
+            .catch(function () {
+                updateLastSync("Refresh failed. Try again.");
+                setLiveState("offline", "Connection issue");
+            })
+            .finally(function () {
+                isRefreshing = false;
+            });
+    }
+
+    function startAutoRefresh() {
+        if (!autoRefreshInput || !autoRefreshInput.checked || !selectedEmployeeId) {
+            return;
+        }
+
+        window.clearInterval(refreshTimer);
+        refreshTimer = window.setInterval(function () {
+            fetchConversation(false);
+        }, 4000);
+        setLiveState("live", "Live updates on");
+    }
+
+    function stopAutoRefresh() {
+        window.clearInterval(refreshTimer);
+        refreshTimer = null;
+        setLiveState("offline", "Live updates paused");
+    }
+
+    function connectWebSocket() {
+        if (!wsUrl || socket) {
+            return;
+        }
+
+        socket = new WebSocket(wsUrl);
+
+        socket.addEventListener("open", function () {
+            stopAutoRefresh();
+            setLiveState("live", "WebSocket live");
+            updateLastSync("Listening for new messages...");
+        });
+
+        socket.addEventListener("message", function () {
+            fetchConversation(false);
+        });
+
+        socket.addEventListener("error", function () {
+            setLiveState("offline", "WebSocket issue");
+            updateLastSync("Live socket error. Switching to refresh mode.");
+        });
+
+        socket.addEventListener("close", function () {
+            socket = null;
+            if (autoRefreshInput && autoRefreshInput.checked) {
+                startAutoRefresh();
+            } else {
+                setLiveState("offline", "Live updates paused");
+            }
+        });
+    }
+
+    document.querySelectorAll("[data-chat-loading-link]").forEach(function (link) {
+        link.addEventListener("click", function () {
+            showLoading("Opening conversation...");
+        });
+    });
+
+    document.querySelectorAll("[data-chat-loading-form]").forEach(function (form) {
+        form.addEventListener("submit", function () {
+            const submitButton = form.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+            }
+            scrollThreadToBottom("smooth");
+            showLoading("Loading conversation...");
+        });
+    });
+
+    document.querySelectorAll("[data-chat-inline-form]").forEach(function (form) {
+        form.addEventListener("submit", function (event) {
+            event.preventDefault();
+
+            if (!messageInput || !messageInput.value.trim()) {
+                return;
+            }
+
+            setComposerState(true);
+
+            const formData = new FormData(form);
+            fetch(window.location.pathname + window.location.search, {
+                method: "POST",
+                body: formData,
+                credentials: "same-origin",
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            })
+                .then(function (response) {
+                    return response.json().then(function (payload) {
+                        if (!response.ok) {
+                            throw new Error(payload.detail || "Unable to send message.");
+                        }
+                        return payload;
+                    });
+                })
+                .then(function (payload) {
+                    if (formTokenInput && payload.form_token) {
+                        formTokenInput.value = payload.form_token;
+                    }
+
+                    messageInput.value = "";
+                    scrollThreadToBottom("auto");
+                    fetchConversation(false);
+                    if (messageInput) {
+                        messageInput.focus();
+                    }
+                })
+                .catch(function (error) {
+                    updateLastSync(error.message || "Message send failed.");
+                })
+                .finally(function () {
+                    setComposerState(false);
+                });
+        });
+    });
+
+    if (messageInput && messageForm) {
+        messageInput.addEventListener("keydown", function (event) {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                if (!messageInput.value.trim()) {
+                    return;
+                }
+                messageForm.requestSubmit();
+            }
+        });
+    }
+
+    if (refreshButton) {
+        refreshButton.addEventListener("click", function () {
+            fetchConversation(true);
+        });
+    }
+
+    if (autoRefreshInput) {
+        autoRefreshInput.addEventListener("change", function () {
+            if (autoRefreshInput.checked) {
+                startAutoRefresh();
+                fetchConversation(true);
+                return;
+            }
+            stopAutoRefresh();
+        });
+    }
+
+    if (selectedEmployeeId) {
+        connectWebSocket();
+        if (!socket) {
+            startAutoRefresh();
+        }
+        fetchConversation(false);
+        scrollThreadToBottom("auto");
+    }
+})();
+</script>
+{% endif %}
+{% endblock %}

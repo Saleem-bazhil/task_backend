@@ -1,0 +1,8 @@
+{% extends "admin/change_list.html" %}
+
+{% block object-tools %}
+    {{ block.super }}
+    <li style="margin-left: 10px; float: right;">
+        <a href="{{ live_chat_url }}" class="button button-primary">Employee Chat</a>
+    </li>
+{% endblock %}
