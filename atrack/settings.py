@@ -97,6 +97,10 @@ else:
 DATABASES = {
     "default": dj_database_url.parse(_require_env("DATABASE_URL"))
 }
+DATABASES["default"]["CONN_MAX_AGE"] = 0
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
+DATABASES["default"].setdefault("OPTIONS", {})
+DATABASES["default"]["OPTIONS"]["connect_timeout"] = 5
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
