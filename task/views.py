@@ -55,10 +55,20 @@ def get_task_queryset_for(user):
     
     if is_admin_user(user):
         # Admins see all tasks
-        queryset = Task.objects.select_related("user", "user__userprofile").prefetch_related("assigned_to").all()
+        queryset = Task.objects.select_related(
+            "user",
+            "user__userprofile",
+            "assigned_by",
+            "assigned_by__userprofile",
+        ).prefetch_related("assigned_to").all()
     else:
         # Regular users see tasks they're involved with
-        queryset = Task.objects.select_related("user", "user__userprofile").prefetch_related("assigned_to").filter(
+        queryset = Task.objects.select_related(
+            "user",
+            "user__userprofile",
+            "assigned_by",
+            "assigned_by__userprofile",
+        ).prefetch_related("assigned_to").filter(
             Q(user=user) |  # Created by them
             Q(assigned_to__id=user.id)  # Assigned to them
         ).distinct()
@@ -163,10 +173,9 @@ class Taskview(ModelViewSet):
     def perform_create(self, serializer):
         task = serializer.save(user=self.request.user)
 
-        if task.assigned_to.exists():
-            if not task.assigned_to.filter(id=self.request.user.id).exists():
-                task.assigned_by = self.request.user
-                task.save()
+        if task.assigned_to.exists() and not task.assigned_by:
+            task.assigned_by = self.request.user
+            task.save()
 
         TaskHistory.objects.create(
             task=task,
@@ -244,7 +253,11 @@ class Taskview(ModelViewSet):
         newly_assigned_ids = new_assigned_ids - old_assigned_ids
         unassigned_ids = old_assigned_ids - new_assigned_ids
 
-        # Notify newly assigned users
+        # Notify newly assigned users and update assignment ownership when the assignee list changes.
+        if newly_assigned_ids and not updated_instance.assigned_by:
+            updated_instance.assigned_by = actor
+            updated_instance.save()
+
         for user_id in newly_assigned_ids:
             assigned_user = User.objects.get(id=user_id)
             TaskHistory.objects.create(
@@ -254,10 +267,6 @@ class Taskview(ModelViewSet):
                 new_value=assigned_user.username,
                 description=f'Assigned to {assigned_user.username}.'
             )
-            # Set assigned_by if not already set and actor is different from assignee
-            if not updated_instance.assigned_by and actor != assigned_user:
-                updated_instance.assigned_by = actor
-                updated_instance.save()
             notify_task_assigned(updated_instance, assigned_user, actor)
 
         # Notify unassigned users (for tracking purposes)
