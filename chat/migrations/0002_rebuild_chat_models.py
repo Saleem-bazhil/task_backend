@@ -36,7 +36,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name="chatroom",
-            constraint=models.CheckConstraint(condition=~models.Q(user_one=models.F("user_two")), name="prevent_self_chatroom"),
+            constraint=models.CheckConstraint(check=~models.Q(user_one=models.F("user_two")), name="prevent_self_chatroom"),
         ),
         migrations.CreateModel(
             name="Message",
