@@ -1,7 +1,20 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from .models import Task, Notification, TaskComment, TaskAttachment, TaskHistory
+
+
+def is_admin_user(user):
+    return bool(
+        user
+        and user.is_authenticated
+        and (
+            user.is_staff
+            or user.is_superuser
+            or getattr(getattr(user, "userprofile", None), "role", "") == "admin"
+        )
+    )
 
 
 class TaskUserSerializer(serializers.ModelSerializer):
@@ -132,24 +145,59 @@ class TaskSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         if not request:
             return attrs
-            
-        is_admin = bool(
-            request.user.is_authenticated
-            and (
-                request.user.is_staff
-                or request.user.is_superuser
-                or getattr(getattr(request.user, "userprofile", None), "role", "") == "admin"
-            )
-        )
 
-        # Allow anyone to create tasks if that's the "Everyone can receive/receive" flow,
-        # but keep some validation for assignment.
-        if request.method == "POST" and not is_admin:
-            # If an employee creates a task, maybe it should be unassigned or for review?
-            # For now, let's keep it simple: allow them to create unassigned tasks.
-            pass
+        current_user = request.user
+        assigned_by = attrs.get("assigned_by")
+        assigned_to = attrs.get("assigned_to")
+
+        # Allow all assignment flows between admin and employee roles.
+        # This includes:
+        #   Admin → Employee
+        #   Employee → Admin
+        #   Admin → Admin
+        #   Employee → Employee
+        # The validation focuses on assignment ownership rather than restricting role pairs.
+        if assigned_by and assigned_by != current_user and not is_admin_user(current_user):
+            raise ValidationError({
+                "assigned_by_id": "You may only set yourself as the assigning user unless you are an admin."
+            })
+
+        if assigned_to is not None and len(assigned_to) == 0 and assigned_by:
+            raise ValidationError({
+                "assigned_to_ids": "Cannot assign a task without at least one assignee."
+            })
+
+        # Automatically record assignment ownership from the current user when assigning a task
+        if assigned_to is not None and not assigned_by:
+            attrs["assigned_by"] = current_user
 
         return attrs
+
+    def create(self, validated_data):
+        """Override create to properly handle ManyToMany fields."""
+        assigned_to_users = validated_data.pop("assigned_to", [])
+        task = Task.objects.create(**validated_data)
+        
+        # Assign users to the task
+        if assigned_to_users:
+            task.assigned_to.set(assigned_to_users)
+        
+        return task
+
+    def update(self, instance, validated_data):
+        """Override update to properly handle ManyToMany fields."""
+        assigned_to_users = validated_data.pop("assigned_to", None)
+        
+        # Update all other fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        # Update ManyToMany field if provided
+        if assigned_to_users is not None:
+            instance.assigned_to.set(assigned_to_users)
+        
+        return instance
 
 
 class TaskHistorySerializer(serializers.ModelSerializer):
